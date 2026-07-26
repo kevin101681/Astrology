@@ -448,6 +448,26 @@ export class AstroScene {
     return this.planets.earth.holder.position.clone();
   }
 
+  // Attach/remove ℞ markers above planets that were retrograde at the
+  // chart's birth instant.
+  setRetrogrades(names) {
+    for (const name of planetNames()) {
+      const p = this.planets[name];
+      if (p.retroBadge) {
+        p.holder.remove(p.retroBadge);
+        p.retroBadge.material.map.dispose();
+        p.retroBadge.material.dispose();
+        p.retroBadge = null;
+      }
+      if (names.includes(name)) {
+        const badge = makeTextSprite('℞', { fontSize: 52, color: '#ff9a9a', bold: true, scale: 0.6 });
+        badge.position.set(0, PLANET_STYLE[name].r + 13, 0);
+        p.holder.add(badge);
+        p.retroBadge = badge;
+      }
+    }
+  }
+
   // Smoothly fly the camera. Returns a promise resolving when it lands.
   flyTo(position, target, duration = 2600) {
     return new Promise((resolve) => {

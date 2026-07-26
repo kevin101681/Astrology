@@ -186,6 +186,32 @@ form input:focus, form select:focus { outline: 1px solid var(--accent); }
 .element-trine { font-size: 0.7rem; color: var(--text-dim); }
 .element-text { font-size: 0.76rem; color: var(--text); line-height: 1.55; margin-top: 6px; }
 
+/* ── Planets & retrogrades ── */
+.now-sky {
+  font-size: 0.72rem; color: var(--text-dim); margin-top: 14px;
+  line-height: 1.6; border-top: 1px solid rgba(120, 160, 255, 0.12); padding-top: 10px;
+}
+.now-sky strong { color: #ffb3b3; letter-spacing: 0.06em; }
+.retro-summary { font-size: 0.8rem; margin-bottom: 10px; color: #ffb3b3; }
+.planet-row {
+  display: grid; grid-template-columns: 34px 1fr; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid rgba(120, 160, 255, 0.1);
+}
+.planet-row .p-glyph {
+  font-size: 1.35rem; color: var(--accent); text-align: center; padding-top: 2px;
+}
+.planet-row.is-retro .p-glyph { color: #ff9a9a; }
+.planet-row .p-title { font-size: 0.85rem; font-weight: 600; }
+.planet-row .p-domain {
+  font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-dim); margin: 2px 0 4px;
+}
+.retro-badge {
+  display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 12px;
+  font-size: 0.66rem; font-weight: 700; color: #ff9a9a;
+  background: rgba(255, 120, 120, 0.12); border: 1px solid rgba(255, 130, 130, 0.4);
+}
+
 /* ── Houses ── */
 .house-row {
   display: grid; grid-template-columns: 34px 1fr; gap: 10px;
