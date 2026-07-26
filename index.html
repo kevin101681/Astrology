@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Celestial Atlas — Interactive Astrology Map</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div id="space"></div>
+
+  <header id="masthead">
+    <h1>✦ Celestial Atlas</h1>
+    <p>An interactive map of your sky</p>
+  </header>
+
+  <!-- ── Birth details menu ─────────────────────────────────────────── -->
+  <aside id="menu" class="panel">
+    <button id="menu-toggle" class="panel-toggle" title="Show / hide">☰</button>
+    <div class="panel-body">
+      <h2>Your Birth Sky</h2>
+      <form id="birth-form">
+        <label>Birth date
+          <input type="date" id="in-date" required value="1990-06-15" min="1900-01-01" max="2099-12-31" />
+        </label>
+        <label>Time born
+          <input type="time" id="in-time" required value="12:00" />
+        </label>
+        <label>Birthplace
+          <select id="in-city"></select>
+        </label>
+        <div id="custom-place" class="row3 hidden">
+          <label>Lat °<input type="number" id="in-lat" step="0.01" min="-89.9" max="89.9" value="40.71" /></label>
+          <label>Lon °<input type="number" id="in-lon" step="0.01" min="-180" max="180" value="-74.01" /></label>
+          <label>UTC±<input type="number" id="in-utc" step="0.25" min="-12" max="14" value="-5" /></label>
+        </div>
+        <p class="hint" id="tz-hint"></p>
+        <label class="check"><input type="checkbox" id="in-dst" /> Daylight saving time was in effect</label>
+        <button type="submit" id="reveal-btn">✦ Reveal My Chart</button>
+      </form>
+      <div id="nav-buttons" class="hidden">
+        <h3>Fly to…</h3>
+        <div class="btn-grid">
+          <button data-fly="sun" class="fly sun">☉ Sun sign</button>
+          <button data-fly="moon" class="fly moon">☾ Moon sign</button>
+          <button data-fly="rising" class="fly rising">↑ Rising sign</button>
+          <button data-fly="earth" class="fly">♁ Earth</button>
+          <button data-fly="overview" class="fly wide">✧ Solar system overview</button>
+        </div>
+      </div>
+      <p class="fineprint">Positions computed from real ephemeris formulas
+        (tropical zodiac, whole-sign houses). Scene distances are stylized for
+        visibility. For entertainment &amp; wonder.</p>
+    </div>
+  </aside>
+
+  <!-- ── Results panel ──────────────────────────────────────────────── -->
+  <aside id="results" class="panel hidden">
+    <button id="results-toggle" class="panel-toggle" title="Show / hide">✦</button>
+    <div class="panel-body">
+      <h2 id="results-title">Your Chart</h2>
+      <div id="big-three"></div>
+      <nav id="tabs">
+        <button class="tab active" data-tab="sun">Sun</button>
+        <button class="tab" data-tab="moon">Moon</button>
+        <button class="tab" data-tab="rising">Rising</button>
+        <button class="tab" data-tab="houses">Houses</button>
+      </nav>
+      <div id="tab-content"></div>
+    </div>
+  </aside>
+
+  <div id="toast" class="hidden"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
