@@ -136,6 +136,7 @@ $('#birth-form').addEventListener('submit', async (ev) => {
   scene.highlightConstellation(SIGNS[chart.sun.sign], HIGHLIGHT.sun);
   scene.highlightConstellation(SIGNS[chart.moon.sign], HIGHLIGHT.moon);
   scene.highlightConstellation(SIGNS[chart.ascendant.sign], HIGHLIGHT.rising);
+  scene.showChartGeometry(chart, latitude, longitude);
 
   renderResults();
   $('#results').classList.remove('hidden');
@@ -143,8 +144,8 @@ $('#birth-form').addEventListener('submit', async (ev) => {
   $('#nav-buttons').classList.remove('hidden');
   if (window.innerWidth < 900) $('#menu').classList.add('collapsed');
 
-  toast(`Flying to ${SIGNS[chart.sun.sign]} — your Sun sign ☉`);
-  await scene.focusConstellation(SIGNS[chart.sun.sign]);
+  toast('Mapping your birth sky — Sun, Moon and horizon lines point to your signs ✦');
+  await scene.focusChartGeometry();
 });
 
 // --- fly-to buttons -----------------------------------------------------------
@@ -153,6 +154,12 @@ document.querySelectorAll('.fly').forEach((btn) => {
   btn.addEventListener('click', async () => {
     const where = btn.dataset.fly;
     if (where === 'overview') { scene.focusOverview(); return; }
+    if (where === 'geometry') {
+      if (!chart) { toast('Reveal your chart first ✦'); return; }
+      toast('Your birth sky — each line shows how a sign is assigned ✦');
+      scene.focusChartGeometry();
+      return;
+    }
     if (where === 'earth') {
       toast('Earth — as it stood in your birth sky ♁');
       scene.focusEarth();

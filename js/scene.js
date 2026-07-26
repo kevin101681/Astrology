@@ -5,7 +5,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { ZODIAC_CONSTELLATIONS, BRIGHT_STARS } from './data/constellations.js';
-import { planetHelioLongitude, planetNames, moonPhaseAngle } from './astro.js';
+import { planetHelioLongitude, planetNames, moonPhaseAngle, gmst, SIGNS } from './astro.js';
 import {
   rockyTexture, gasGiantTexture, earthTexture, cloudTexture, sunTexture,
   glowSprite, starSprite, saturnRingTexture, milkyWayTexture,
@@ -481,6 +481,160 @@ export class AstroScene {
       .add(side.multiplyScalar(22));
     camPos.y += 9;
     return this.flyTo(camPos, e, 2800);
+  }
+
+  // ------------------------------------------------------------------------
+  // Chart geometry: sight lines from Earth through the Sun / Moon / eastern
+  // horizon out to the zodiac, plus the observer's horizon plane. This is the
+  // literal "why" of a birth chart, drawn in space.
+  // ------------------------------------------------------------------------
+
+  clearChartGeometry() {
+    if (this.geometryGroup) {
+      this.scene.remove(this.geometryGroup);
+      this.geometryGroup.traverse((o) => {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) o.material.dispose();
+      });
+      this.geometryGroup = null;
+      this.geometryInfo = null;
+    }
+  }
+
+  // Distance along a ray from `origin` in unit direction `dir` to the
+  // celestial sphere (centered on the Sun at the scene origin).
+  _rayToSphere(origin, dir, radius = CELESTIAL_R * 0.985) {
+    const b = origin.dot(dir);
+    return -b + Math.sqrt(Math.max(0, b * b - origin.lengthSq() + radius * radius));
+  }
+
+  _sightLine(group, from, dir, color, glyph, text) {
+    const t = this._rayToSphere(from, dir);
+    const end = from.clone().addScaledVector(dir, t);
+
+    const geo = new THREE.BufferGeometry().setFromPoints([
+      from.clone().addScaledVector(dir, 4.5), end,
+    ]);
+    const line = new THREE.Line(geo, new THREE.LineBasicMaterial({
+      color, transparent: true, opacity: 0.9,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    group.add(line);
+
+    // Soft glow where the line meets the zodiac.
+    const glowTex = new THREE.CanvasTexture(glowSprite({
+      inner: [255, 255, 255],
+      outer: [(color >> 16) & 255, (color >> 8) & 255, color & 255],
+    }));
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTex, transparent: true, opacity: 0.95,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    glow.scale.setScalar(46);
+    glow.position.copy(end);
+    group.add(glow);
+
+    // Label riding the line partway out.
+    const label = makeTextSprite(`${glyph} ${text}`, {
+      fontSize: 46, bold: true,
+      color: `#${color.toString(16).padStart(6, '0')}`,
+      scale: 1.35,
+    });
+    label.position.copy(from).addScaledVector(dir, Math.min(t * 0.5, 330));
+    label.position.y += 16;
+    group.add(label);
+    return end;
+  }
+
+  // chart: result of computeChart(); latitude/longitude: birth place.
+  showChartGeometry(chart, latitude, longitude) {
+    this.clearChartGeometry();
+    const group = new THREE.Group();
+    const E = this.earthPosition();
+
+    const sunDir = eclipticDir(chart.sun.longitude);
+    const moonDir = eclipticDir(chart.moon.longitude);
+    const ascDir = eclipticDir(chart.ascendant.longitude);
+
+    // Geocentric sight lines. The Sun line passes exactly through the Sun,
+    // and the Moon line through the Moon — the scene places both bodies at
+    // their true geocentric longitudes for the birth instant.
+    this._sightLine(group, E, sunDir, 0xe8c96a, '☉', `Sun in ${SIGNS[chart.sun.sign]}`);
+    this._sightLine(group, E, moonDir, 0xc9d6ea, '☾', `Moon in ${SIGNS[chart.moon.sign]}`);
+    this._sightLine(group, E, ascDir, 0xe69ac2, '↑', `Rising in ${SIGNS[chart.ascendant.sign]}`);
+
+    // Observer's horizon plane: perpendicular to the local zenith. The
+    // zenith points at RA = local sidereal time, Dec = latitude.
+    const lst = gmst(chart.jd) + longitude; // degrees
+    const [zLon, zLat] = equatorialToEcliptic(lst / 15, latitude);
+    const zenith = eclipticDir(zLon, zLat);
+
+    const HR = 62; // horizon disc radius
+    const disc = new THREE.Mesh(
+      new THREE.CircleGeometry(HR, 72),
+      new THREE.MeshBasicMaterial({
+        color: 0x51e0c8, transparent: true, opacity: 0.14,
+        side: THREE.DoubleSide, depthWrite: false,
+      }),
+    );
+    disc.position.copy(E);
+    disc.lookAt(E.clone().add(zenith));
+    group.add(disc);
+
+    const rim = new THREE.Mesh(
+      new THREE.RingGeometry(HR - 0.9, HR + 0.9, 96),
+      new THREE.MeshBasicMaterial({
+        color: 0x6df0d8, transparent: true, opacity: 0.55,
+        side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending,
+      }),
+    );
+    rim.position.copy(E);
+    rim.lookAt(E.clone().add(zenith));
+    group.add(rim);
+
+    // The rising point sits where the horizon rim crosses the ecliptic in
+    // the east — mark it, since the rising line lies in this plane.
+    const eastMark = new THREE.Mesh(
+      new THREE.SphereGeometry(2.4, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0xe69ac2 }),
+    );
+    eastMark.position.copy(E).addScaledVector(ascDir, HR);
+    group.add(eastMark);
+
+    const horizonLabel = makeTextSprite('your horizon — east ↗', {
+      fontSize: 38, color: '#6df0d8', scale: 0.9,
+    });
+    horizonLabel.position.copy(E).addScaledVector(ascDir, HR + 26);
+    horizonLabel.position.y -= 8;
+    group.add(horizonLabel);
+
+    // Zenith pointer: a short line straight "up" for the observer.
+    const zGeo = new THREE.BufferGeometry().setFromPoints([
+      E.clone(), E.clone().addScaledVector(zenith, HR * 0.75),
+    ]);
+    const zLine = new THREE.Line(zGeo, new THREE.LineBasicMaterial({
+      color: 0x6df0d8, transparent: true, opacity: 0.4, depthWrite: false,
+    }));
+    group.add(zLine);
+
+    this.scene.add(group);
+    this.geometryGroup = group;
+    this.geometryInfo = { E, sunDir, moonDir, ascDir, zenith };
+  }
+
+  // Pull back to frame Earth, the horizon disc, and the three sight lines.
+  focusChartGeometry() {
+    if (!this.geometryInfo) return Promise.resolve();
+    const { E, sunDir, moonDir, ascDir } = this.geometryInfo;
+    // Aim at the average direction the lines head toward; view from behind.
+    const centroid = sunDir.clone().add(moonDir).add(ascDir);
+    if (centroid.lengthSq() < 0.05) centroid.copy(sunDir); // degenerate spread
+    centroid.normalize();
+    const camPos = E.clone()
+      .addScaledVector(centroid, -345)
+      .add(new THREE.Vector3(0, 260, 0));
+    const target = E.clone().addScaledVector(centroid, 175);
+    return this.flyTo(camPos, target, 3000);
   }
 
   highlightConstellation(name, colorHex) {
