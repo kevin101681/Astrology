@@ -1,6 +1,6 @@
 // Celestial Atlas service worker — cache-first for the fully static app,
 // so it works offline and installs as a PWA.
-const CACHE = 'celestial-atlas-v1';
+const CACHE = 'celestial-atlas-v2';
 
 const ASSETS = [
   './',
@@ -35,13 +35,14 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Stale-while-revalidate: serve from cache instantly for speed/offline, but
+// always refresh the cached copy in the background so a redeploy reaches
+// installed apps on their next launch.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
     caches.match(event.request, { ignoreSearch: true }).then((hit) => {
-      if (hit) return hit;
-      return fetch(event.request).then((resp) => {
-        // Cache same-origin responses on the fly (future assets, if any).
+      const refresh = fetch(event.request).then((resp) => {
         if (resp.ok && new URL(event.request.url).origin === self.location.origin) {
           const copy = resp.clone();
           caches.open(CACHE).then((cache) => cache.put(event.request, copy));
@@ -52,6 +53,7 @@ self.addEventListener('fetch', (event) => {
         if (event.request.mode === 'navigate') return caches.match('./index.html');
         throw new Error('offline');
       });
+      return hit || refresh;
     }),
   );
 });

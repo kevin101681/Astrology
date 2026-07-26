@@ -152,6 +152,40 @@ form input:focus, form select:focus { outline: 1px solid var(--accent); }
   border-left: 2px solid var(--panel-border); padding-left: 10px; margin: 10px 0;
 }
 
+/* ── Elements ── */
+.element-chip {
+  display: inline-block; padding: 2px 10px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600; vertical-align: middle;
+  color: var(--el);
+  background: color-mix(in srgb, var(--el) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--el) 45%, transparent);
+}
+.balance-card {
+  border: 1px solid var(--panel-border); border-radius: 12px;
+  background: rgba(22, 32, 60, 0.6); padding: 12px; margin-bottom: 14px;
+}
+.balance-row { display: flex; gap: 8px; justify-content: space-between; }
+.balance-cell {
+  flex: 1; text-align: center; display: flex; flex-direction: column;
+  gap: 5px; align-items: center;
+}
+.balance-cell .role {
+  font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+.balance-blurb { font-size: 0.8rem; margin-top: 10px; line-height: 1.55; }
+.element-block {
+  border-left: 3px solid var(--el); border-radius: 4px;
+  background: color-mix(in srgb, var(--el) 5%, transparent);
+  padding: 10px 12px; margin-bottom: 10px;
+}
+.element-head { display: flex; gap: 10px; align-items: flex-start; }
+.element-emoji { font-size: 1.5rem; line-height: 1.2; }
+.element-head strong { color: var(--el); font-size: 0.95rem; }
+.element-count { font-size: 0.68rem; color: var(--text-dim); margin-left: 6px; }
+.element-trine { font-size: 0.7rem; color: var(--text-dim); }
+.element-text { font-size: 0.76rem; color: var(--text); line-height: 1.55; margin-top: 6px; }
+
 /* ── Houses ── */
 .house-row {
   display: grid; grid-template-columns: 34px 1fr; gap: 10px;

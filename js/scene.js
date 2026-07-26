@@ -244,6 +244,8 @@ export class AstroScene {
     })));
 
     const glyphs = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
+    // Fire, Earth, Air, Water — signs cycle through the elements in order.
+    const elementColors = ['#ff8a5c', '#7fd68f', '#ffe27a', '#6cb2ff'];
     for (let i = 0; i < 12; i++) {
       // Boundary tick
       const tickPts = [
@@ -254,10 +256,12 @@ export class AstroScene {
       this.scene.add(new THREE.Line(tgeo, new THREE.LineBasicMaterial({
         color: 0x8a7a3a, transparent: true, opacity: 0.3,
       })));
-      // Glyph at the middle of the sign
-      const glyph = makeTextSprite(glyphs[i], { fontSize: 64, color: '#d9c26a', scale: 1.4 });
+      // Glyph at the middle of the sign, tinted by its element.
+      const glyph = makeTextSprite(glyphs[i], {
+        fontSize: 64, color: elementColors[i % 4], scale: 1.4,
+      });
       glyph.position.copy(eclipticDir(i * 30 + 15, -6).multiplyScalar(CELESTIAL_R * 0.97));
-      glyph.material.opacity = 0.8;
+      glyph.material.opacity = 0.85;
       this.scene.add(glyph);
     }
   }

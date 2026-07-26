@@ -4,7 +4,10 @@
 
 import { AstroScene } from './scene.js';
 import { computeChart, julianDay, SIGNS, SIGN_GLYPHS, fmtLongitude } from './astro.js';
-import { SIGN_MEANINGS, HOUSE_MEANINGS, PLACEMENT_INTRO } from './data/meanings.js';
+import {
+  SIGN_MEANINGS, HOUSE_MEANINGS, PLACEMENT_INTRO,
+  ELEMENTS, elementOfSign,
+} from './data/meanings.js';
 
 // [name, latitude °N, longitude °E, standard UTC offset]
 const CITIES = [
@@ -208,9 +211,67 @@ function setActiveTab(tab) {
 document.querySelectorAll('.tab').forEach((t) =>
   t.addEventListener('click', () => setActiveTab(t.dataset.tab)));
 
+function elementChip(signIndex) {
+  const name = elementOfSign(signIndex);
+  const el = ELEMENTS[name];
+  return `<span class="element-chip" style="--el:${el.color}">${el.emoji} ${name}</span>`;
+}
+
+// How the three placements' elements combine, in one sentence.
+function elementBalance() {
+  const roles = [
+    ['Sun', chart.sun.sign], ['Moon', chart.moon.sign], ['Rising', chart.ascendant.sign],
+  ];
+  const counts = {};
+  for (const [, s] of roles) {
+    const e = elementOfSign(s);
+    counts[e] = (counts[e] || 0) + 1;
+  }
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  let blurb;
+  if (entries.length === 1) {
+    blurb = `Pure ${entries[0][0]} — your Sun, Moon and Rising all share one element. ${ELEMENTS[entries[0][0]].keyword[0].toUpperCase()}${ELEMENTS[entries[0][0]].keyword.slice(1)} runs through everything you do.`;
+  } else if (entries.length === 2) {
+    blurb = `Mostly ${entries[0][0]} (${entries[0][1]} of 3) with a current of ${entries[1][0]} — ${ELEMENTS[entries[0][0]].keyword}, tempered by ${ELEMENTS[entries[1][0]].keyword}.`;
+  } else {
+    blurb = 'Three placements, three elements — an unusually balanced blend that lets you meet people on almost any wavelength.';
+  }
+  return { roles, counts, blurb };
+}
+
 function renderTab(tab) {
   const box = $('#tab-content');
   if (!chart) { box.innerHTML = ''; return; }
+
+  if (tab === 'elements') {
+    const { roles, counts, blurb } = elementBalance();
+    box.innerHTML = `
+      <p class="intro">Every sign belongs to one of the four classical elements —
+      the temperament beneath the twelve signs.</p>
+      <div class="balance-card">
+        <div class="balance-row">
+          ${roles.map(([role, s]) => `
+            <div class="balance-cell">
+              <span class="role">${role}</span>
+              ${elementChip(s)}
+            </div>`).join('')}
+        </div>
+        <p class="balance-blurb">${blurb}</p>
+      </div>
+      ${Object.entries(ELEMENTS).map(([name, el]) => `
+        <div class="element-block" style="--el:${el.color}">
+          <div class="element-head">
+            <span class="element-emoji">${el.emoji}</span>
+            <div>
+              <strong>${name}</strong>
+              <span class="element-count">${counts[name] ? `× ${counts[name]} in your big three` : ''}</span>
+              <div class="element-trine">${el.trine}</div>
+            </div>
+          </div>
+          <p class="element-text">${el.text}</p>
+        </div>`).join('')}`;
+    return;
+  }
 
   if (tab === 'houses') {
     box.innerHTML = `
@@ -223,7 +284,8 @@ function renderTab(tab) {
           <div class="num">${h.house}</div>
           <div>
             <div class="h-title">${hm.title}
-              <span class="h-sign">${SIGN_GLYPHS[h.sign]} ${SIGNS[h.sign]}</span></div>
+              <span class="h-sign" style="color:${ELEMENTS[elementOfSign(h.sign)].color}">
+                ${SIGN_GLYPHS[h.sign]} ${SIGNS[h.sign]}</span></div>
             <div class="h-text">${hm.text}</div>
           </div>
         </div>`;
@@ -242,7 +304,7 @@ function renderTab(tab) {
         <div class="degree">${ROLE_GLYPH[tab]} at ${fmtLongitude(placement.longitude)}</div>
       </div>
     </div>
-    <div class="meta">${m.symbol} · ${m.element} · ${m.quality} · ruled by ${m.ruler} · ${m.dates}</div>
+    <div class="meta">${elementChip(placement.sign)} ${m.symbol} · ${m.quality} · ruled by ${m.ruler} · ${m.dates}</div>
     <div class="traits">${m.keywords.map((k) => `<span class="trait">${k}</span>`).join('')}</div>
     <p class="intro">${PLACEMENT_INTRO[tab]}</p>
     <p>${m[tab]}</p>`;
