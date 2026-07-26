@@ -126,26 +126,90 @@ export function midheaven(jd, longitude) {
   return norm360(mc);
 }
 
-// Approximate heliocentric mean longitudes of the planets (for scene
-// placement — visually faithful, not chart-grade). J2000 elements + rates.
+// Approximate heliocentric elements of the planets (J2000 mean longitude +
+// daily rate, semi-major axis, eccentricity, longitude of perihelion). With
+// the equation of center applied this gives true longitudes good to well
+// under a degree for the inner planets — enough for sign placement and
+// retrograde detection.
 const PLANET_ELEMENTS = {
-  mercury: { L0: 252.25084, rate: 4.09233445, a: 0.387 },
-  venus:   { L0: 181.97973, rate: 1.60213034, a: 0.723 },
-  earth:   { L0: 100.46435, rate: 0.98560910, a: 1.000 },
-  mars:    { L0: 355.45332, rate: 0.52402068, a: 1.524 },
-  jupiter: { L0:  34.40438, rate: 0.08308529, a: 5.203 },
-  saturn:  { L0:  49.94432, rate: 0.03344414, a: 9.537 },
-  uranus:  { L0: 313.23218, rate: 0.01172834, a: 19.191 },
-  neptune: { L0: 304.88003, rate: 0.00598103, a: 30.069 },
+  mercury: { L0: 252.25084, rate: 4.09233445, a: 0.38710, e: 0.20564, peri:  77.456 },
+  venus:   { L0: 181.97973, rate: 1.60213034, a: 0.72333, e: 0.00678, peri: 131.564 },
+  earth:   { L0: 100.46435, rate: 0.98560910, a: 1.00000, e: 0.01671, peri: 102.947 },
+  mars:    { L0: 355.45332, rate: 0.52402068, a: 1.52368, e: 0.09340, peri: 336.041 },
+  jupiter: { L0:  34.40438, rate: 0.08308529, a: 5.20260, e: 0.04849, peri:  14.754 },
+  saturn:  { L0:  49.94432, rate: 0.03344414, a: 9.55491, e: 0.05551, peri:  92.432 },
+  uranus:  { L0: 313.23218, rate: 0.01172834, a: 19.21845, e: 0.04630, peri: 170.964 },
+  neptune: { L0: 304.88003, rate: 0.00598103, a: 30.11039, e: 0.00899, peri:  44.971 },
 };
 
+// Heliocentric true longitude via the equation of center.
 export function planetHelioLongitude(name, jd) {
   const el = PLANET_ELEMENTS[name];
-  return norm360(el.L0 + el.rate * j2000(jd));
+  const L = norm360(el.L0 + el.rate * j2000(jd));
+  const M = norm360(L - el.peri) * DEG; // mean anomaly
+  const C = (2 * el.e - el.e ** 3 / 4) * Math.sin(M)
+          + 1.25 * el.e ** 2 * Math.sin(2 * M)
+          + (13 / 12) * el.e ** 3 * Math.sin(3 * M);
+  return norm360(L + C / DEG);
+}
+
+// Heliocentric position in the ecliptic plane, AU (inclination ignored).
+export function planetHelioPosition(name, jd) {
+  const el = PLANET_ELEMENTS[name];
+  const lon = planetHelioLongitude(name, jd) * DEG;
+  const nu = lon - el.peri * DEG; // true anomaly
+  const r = el.a * (1 - el.e ** 2) / (1 + el.e * Math.cos(nu));
+  return { x: r * Math.cos(lon), y: r * Math.sin(lon) };
+}
+
+// Geocentric ecliptic longitude — the planet as seen from Earth, which is
+// what a birth chart uses and what makes retrogrades appear.
+export function planetGeoLongitude(name, jd) {
+  const p = planetHelioPosition(name, jd);
+  const e = planetHelioPosition('earth', jd);
+  return norm360(Math.atan2(p.y - e.y, p.x - e.x) / DEG);
+}
+
+// A planet is retrograde when its geocentric longitude is decreasing.
+export function isRetrograde(name, jd) {
+  let d = planetGeoLongitude(name, jd + 1) - planetGeoLongitude(name, jd - 1);
+  d = ((d + 540) % 360) - 180; // wrap to [-180, 180)
+  return d < 0;
+}
+
+// Approximate date (JD) the current retrograde ends; null if not retrograde.
+export function retrogradeUntil(name, jd) {
+  if (!isRetrograde(name, jd)) return null;
+  for (let t = jd + 1; t < jd + 260; t += 1) {
+    if (!isRetrograde(name, t)) return t;
+  }
+  return null;
 }
 
 export function planetNames() {
   return Object.keys(PLANET_ELEMENTS);
+}
+
+// Chart planets: everything except Earth (the chart's vantage point).
+export const CHART_PLANETS = ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
+
+// JD → { year, month, day } (UTC), for displaying approximate event dates.
+export function jdToDate(jd) {
+  const Z = Math.floor(jd + 0.5);
+  const F = jd + 0.5 - Z;
+  let A = Z;
+  if (Z >= 2299161) {
+    const alpha = Math.floor((Z - 1867216.25) / 36524.25);
+    A = Z + 1 + alpha - Math.floor(alpha / 4);
+  }
+  const B = A + 1524;
+  const C = Math.floor((B - 122.1) / 365.25);
+  const D = Math.floor(365.25 * C);
+  const E = Math.floor((B - D) / 30.6001);
+  const day = B - D - Math.floor(30.6001 * E) + F;
+  const month = E < 14 ? E - 1 : E - 13;
+  const year = month > 2 ? C - 4716 : C - 4715;
+  return { year, month, day: Math.floor(day) };
 }
 
 // Moon's geocentric position expressed as an angle around Earth for the
@@ -169,6 +233,12 @@ export function computeChart({ year, month, day, hour, minute, utcOffset, latitu
 
   const risingSign = signOf(ascLon);
 
+  // Planetary placements (geocentric) with retrograde flags.
+  const planets = CHART_PLANETS.map((name) => {
+    const lon = planetGeoLongitude(name, jd);
+    return { name, longitude: lon, sign: signOf(lon), retro: isRetrograde(name, jd) };
+  });
+
   // Whole-sign houses: house 1 spans the entire rising sign, and each
   // subsequent house is the next sign in zodiacal order.
   const houses = [];
@@ -183,5 +253,6 @@ export function computeChart({ year, month, day, hour, minute, utcOffset, latitu
     ascendant: { longitude: ascLon, sign: risingSign },
     midheaven: { longitude: mcLon, sign: signOf(mcLon) },
     houses,
+    planets,
   };
 }

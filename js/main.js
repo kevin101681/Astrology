@@ -3,10 +3,13 @@
 // ---------------------------------------------------------------------------
 
 import { AstroScene } from './scene.js';
-import { computeChart, julianDay, SIGNS, SIGN_GLYPHS, fmtLongitude } from './astro.js';
+import {
+  computeChart, julianDay, SIGNS, SIGN_GLYPHS, fmtLongitude,
+  CHART_PLANETS, isRetrograde, retrogradeUntil, jdToDate,
+} from './astro.js';
 import {
   SIGN_MEANINGS, HOUSE_MEANINGS, PLACEMENT_INTRO,
-  ELEMENTS, elementOfSign,
+  ELEMENTS, elementOfSign, PLANET_INFO, RETRO_INTRO,
 } from './data/meanings.js';
 
 // [name, latitude °N, longitude °E, standard UTC offset]
@@ -69,6 +72,25 @@ const scene = new AstroScene($('#space'));
 }
 
 let chart = null;
+
+// "Sky right now" — which planets are currently retrograde.
+{
+  const now = new Date();
+  const jdNow = julianDay(
+    now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate(),
+    now.getUTCHours() + now.getUTCMinutes() / 60,
+  );
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const retro = CHART_PLANETS.filter((p) => isRetrograde(p, jdNow)).map((p) => {
+    const end = retrogradeUntil(p, jdNow);
+    const d = end ? jdToDate(end) : null;
+    const until = d ? ` (until ~${MONTHS[d.month - 1]} ${d.day})` : '';
+    return `${PLANET_INFO[p].glyph} ${PLANET_INFO[p].title} ℞${until}`;
+  });
+  $('#now-sky').innerHTML = retro.length
+    ? `<strong>Sky right now:</strong> ${retro.join(' · ')}`
+    : '<strong>Sky right now:</strong> no planets retrograde — all systems direct ✨';
+}
 
 // --- city selector ----------------------------------------------------------
 
@@ -140,6 +162,7 @@ $('#birth-form').addEventListener('submit', async (ev) => {
   scene.highlightConstellation(SIGNS[chart.moon.sign], HIGHLIGHT.moon);
   scene.highlightConstellation(SIGNS[chart.ascendant.sign], HIGHLIGHT.rising);
   scene.showChartGeometry(chart, latitude, longitude);
+  scene.setRetrogrades(chart.planets.filter((p) => p.retro).map((p) => p.name));
 
   renderResults();
   $('#results').classList.remove('hidden');
@@ -242,6 +265,32 @@ function elementBalance() {
 function renderTab(tab) {
   const box = $('#tab-content');
   if (!chart) { box.innerHTML = ''; return; }
+
+  if (tab === 'planets') {
+    const retroCount = chart.planets.filter((p) => p.retro).length;
+    box.innerHTML = `
+      <p class="intro">${RETRO_INTRO}</p>
+      <p class="retro-summary">${retroCount === 0
+        ? 'No planets were retrograde when you were born — a rare all-direct chart.'
+        : `${retroCount} planet${retroCount > 1 ? 's were' : ' was'} retrograde ℞ at your birth.`}</p>
+      ${chart.planets.map((p) => {
+        const info = PLANET_INFO[p.name];
+        return `
+        <div class="planet-row ${p.retro ? 'is-retro' : ''}">
+          <div class="p-glyph">${info.glyph}</div>
+          <div>
+            <div class="p-title">${info.title}
+              <span class="h-sign" style="color:${ELEMENTS[elementOfSign(p.sign)].color}">
+                ${SIGN_GLYPHS[p.sign]} ${fmtLongitude(p.longitude)}</span>
+              ${p.retro ? '<span class="retro-badge">℞ retrograde</span>' : ''}
+            </div>
+            <div class="p-domain">${info.domain}</div>
+            <div class="h-text">${p.retro ? info.retro : info.text}</div>
+          </div>
+        </div>`;
+      }).join('')}`;
+    return;
+  }
 
   if (tab === 'elements') {
     const { roles, counts, blurb } = elementBalance();

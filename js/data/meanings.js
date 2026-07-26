@@ -129,6 +129,47 @@ export const ELEMENTS = {
   },
 };
 
+// The chart planets: what each governs, and what a natal retrograde means.
+export const PLANET_INFO = {
+  mercury: {
+    glyph: '☿', title: 'Mercury', domain: 'mind · communication · travel',
+    text: 'How you think, speak, learn and connect the dots.',
+    retro: 'Natal Mercury retrograde: an inward, deliberate thinker. You process before you speak, often express yourself best in writing, and re-read the fine print everyone else skips.',
+  },
+  venus: {
+    glyph: '♀', title: 'Venus', domain: 'love · beauty · values',
+    text: 'How you love, what you find beautiful, and what you value.',
+    retro: 'Natal Venus retrograde: you love privately and seriously. Affection is something you audit before you offer — and once given, it is rarely withdrawn.',
+  },
+  mars: {
+    glyph: '♂', title: 'Mars', domain: 'drive · desire · courage',
+    text: 'How you act, fight, pursue and defend.',
+    retro: 'Natal Mars retrograde: your power builds like a spring. You act on your own timetable, and your strength shows in endurance rather than eruption.',
+  },
+  jupiter: {
+    glyph: '♃', title: 'Jupiter', domain: 'growth · luck · philosophy',
+    text: 'Where you expand, aim high and find meaning.',
+    retro: 'Natal Jupiter retrograde: your luck is an inside job — growth comes from inner conviction rather than outer approval.',
+  },
+  saturn: {
+    glyph: '♄', title: 'Saturn', domain: 'discipline · structure · time',
+    text: 'Where life asks for patience, mastery and responsibility.',
+    retro: 'Natal Saturn retrograde: you answer to your own standard. External rules sit lightly on you; the ones you set yourself are iron.',
+  },
+  uranus: {
+    glyph: '♅', title: 'Uranus', domain: 'change · rebellion · genius',
+    text: 'Where you break the mold (a generational marker).',
+    retro: 'Natal Uranus retrograde: quiet revolutionary — your rebellions happen internally first, then all at once.',
+  },
+  neptune: {
+    glyph: '♆', title: 'Neptune', domain: 'dreams · intuition · imagination',
+    text: 'Where you dissolve boundaries and idealize (generational).',
+    retro: 'Natal Neptune retrograde: the veil is thinner for you — you see through glamour and illusion more readily than most.',
+  },
+};
+
+export const RETRO_INTRO = 'A planet is "retrograde" when, seen from Earth, it appears to move backward through the zodiac — an optical effect of our orbits overtaking each other. In a birth chart, retrograde planets are read as energies turned inward.';
+
 export const HOUSE_MEANINGS = [
   { num: 1,  title: 'Self & Appearance',      text: 'Your identity, body, first impressions and the way you launch into life. Ruled by your rising sign — the mask that turns out to be a face.' },
   { num: 2,  title: 'Money & Values',          text: 'Income, possessions, self-worth and what you consider truly valuable. How you earn, spend and hold on.' },
