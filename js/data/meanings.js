@@ -101,6 +101,34 @@ export const SIGN_MEANINGS = {
   },
 };
 
+// The four classical elements. Zodiac signs cycle Fire → Earth → Air → Water,
+// so a sign's element is simply signIndex % 4.
+export const ELEMENT_ORDER = ['Fire', 'Earth', 'Air', 'Water'];
+export const elementOfSign = (signIndex) => ELEMENT_ORDER[signIndex % 4];
+
+export const ELEMENTS = {
+  Fire: {
+    emoji: '🔥', color: '#ff8a5c', trine: 'Aries · Leo · Sagittarius',
+    keyword: 'spirit, drive & inspiration',
+    text: 'Fire signs run on enthusiasm, courage and instinct. They act first, radiate energy, and light other people up — their gift is momentum, their lesson is patience.',
+  },
+  Earth: {
+    emoji: '🌎', color: '#7fd68f', trine: 'Taurus · Virgo · Capricorn',
+    keyword: 'body, matter & craft',
+    text: 'Earth signs build. Practical, sensory and reliable, they turn ideas into things that last — their gift is steadiness, their lesson is letting go.',
+  },
+  Air: {
+    emoji: '💨', color: '#ffe27a', trine: 'Gemini · Libra · Aquarius',
+    keyword: 'mind, language & connection',
+    text: 'Air signs live in ideas and between people. Curious, social and quick, they translate and connect — their gift is perspective, their lesson is landing.',
+  },
+  Water: {
+    emoji: '💧', color: '#6cb2ff', trine: 'Cancer · Scorpio · Pisces',
+    keyword: 'feeling, memory & intuition',
+    text: 'Water signs feel everything first. Intuitive, deep and empathic, they read the current under every surface — their gift is depth, their lesson is boundaries.',
+  },
+};
+
 export const HOUSE_MEANINGS = [
   { num: 1,  title: 'Self & Appearance',      text: 'Your identity, body, first impressions and the way you launch into life. Ruled by your rising sign — the mask that turns out to be a face.' },
   { num: 2,  title: 'Money & Values',          text: 'Income, possessions, self-worth and what you consider truly valuable. How you earn, spend and hold on.' },
