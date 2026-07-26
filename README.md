@@ -23,6 +23,13 @@ npx serve .
 Then open <http://localhost:8000>. It also works out of the box on GitHub
 Pages (Settings → Pages → deploy from branch).
 
+### Install as an app (PWA)
+
+Celestial Atlas is a Progressive Web App: open the live site and use
+**Install app** (Chrome/Edge menu), or **Share → Add to Home Screen** on
+iOS Safari / Android. It launches full-screen with its own icon and keeps
+working offline — every asset is cached by a service worker on first visit.
+
 ## Using it
 
 1. **Explore** — drag to orbit, scroll to zoom. Planets, orbits, the golden

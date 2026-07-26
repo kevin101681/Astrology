@@ -4,8 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Celestial Atlas — Interactive Astrology Map</title>
+  <meta name="theme-color" content="#030510" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Celestial Atlas" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>" />
+  <link rel="icon" href="icons/icon-192.png" type="image/png" />
   <script type="importmap">
     { "imports": { "three": "./vendor/three.module.js" } }
   </script>
@@ -77,5 +84,12 @@
   <div id="toast" class="hidden"></div>
 
   <script type="module" src="js/main.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () =>
+        navigator.serviceWorker.register('./sw.js').catch((e) =>
+          console.warn('SW registration failed:', e)));
+    }
+  </script>
 </body>
 </html>
