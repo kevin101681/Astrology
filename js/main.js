@@ -1,5 +1,6 @@
 // ---------------------------------------------------------------------------
-// main.js — UI wiring: birth form → chart math → 3D camera tour + readings.
+// main.js — UI wiring: birth sliders → chart math → 3D camera tour + readings,
+// famous charts, and kindred-sign matching.
 // ---------------------------------------------------------------------------
 
 import { AstroScene } from './scene.js';
@@ -11,6 +12,7 @@ import {
   SIGN_MEANINGS, HOUSE_MEANINGS, PLACEMENT_INTRO,
   ELEMENTS, elementOfSign, PLANET_INFO, RETRO_INTRO,
 } from './data/meanings.js';
+import { FAMOUS, FAMOUS_CATEGORIES } from './data/famous.js';
 
 // [name, latitude °N, longitude °E, standard UTC offset]
 const CITIES = [
@@ -52,6 +54,11 @@ const CITIES = [
   ['Lagos, Nigeria', 6.52, 3.38, 1],
   ['Custom location…', null, null, null],
 ];
+const CUSTOM_CITY_INDEX = CITIES.length - 1;
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const HIGHLIGHT = { sun: 0xe8c96a, moon: 0xc9d6ea, rising: 0xe69ac2 };
 const ROLE_GLYPH = { sun: '☉', moon: '☾', rising: '↑' };
@@ -62,7 +69,6 @@ const $ = (sel) => document.querySelector(sel);
 
 const scene = new AstroScene($('#space'));
 
-// Show today's sky until a chart is revealed.
 {
   const now = new Date();
   scene.setDate(julianDay(
@@ -71,20 +77,30 @@ const scene = new AstroScene($('#space'));
   ));
 }
 
-let chart = null;
+let chart = null;          // currently displayed chart
+let profileName = null;    // null = the user's own chart
 
-// "Sky right now" — which planets are currently retrograde.
+// Famous charts, precomputed once (cheap — pure math).
+const famousCharts = FAMOUS.map((p) => ({
+  ...p,
+  chart: computeChart({
+    year: p.year, month: p.month, day: p.day, hour: p.hour, minute: p.minute,
+    utcOffset: p.utc, latitude: p.lat, longitude: p.lon,
+  }),
+}));
+
+// --- "Sky right now": current retrogrades ------------------------------------
+
 {
   const now = new Date();
   const jdNow = julianDay(
     now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate(),
     now.getUTCHours() + now.getUTCMinutes() / 60,
   );
-  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const retro = CHART_PLANETS.filter((p) => isRetrograde(p, jdNow)).map((p) => {
     const end = retrogradeUntil(p, jdNow);
     const d = end ? jdToDate(end) : null;
-    const until = d ? ` (until ~${MONTHS[d.month - 1]} ${d.day})` : '';
+    const until = d ? ` (until ~${MONTHS_SHORT[d.month - 1]} ${d.day})` : '';
     return `${PLANET_INFO[p].glyph} ${PLANET_INFO[p].title} ℞${until}`;
   });
   $('#now-sky').innerHTML = retro.length
@@ -92,7 +108,76 @@ let chart = null;
     : '<strong>Sky right now:</strong> no planets retrograde — all systems direct ✨';
 }
 
-// --- city selector ----------------------------------------------------------
+// --- birth sliders ------------------------------------------------------------
+
+const sl = {
+  year: $('#sl-year'), month: $('#sl-month'), day: $('#sl-day'), time: $('#sl-time'),
+};
+
+function daysInMonth(y, m) {
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+
+function fmtClock(minutes) {
+  const h24 = Math.floor(minutes / 60), mm = minutes % 60;
+  const h12 = ((h24 + 11) % 12) + 1;
+  return `${h12}:${String(mm).padStart(2, '0')} ${h24 < 12 ? 'AM' : 'PM'}`;
+}
+
+function birthInput() {
+  const year = +sl.year.value, month = +sl.month.value, day = +sl.day.value;
+  const minutes = +sl.time.value;
+  return { year, month, day, hour: Math.floor(minutes / 60), minute: minutes % 60 };
+}
+
+function locationInput() {
+  const latitude = parseFloat($('#in-lat').value);
+  const longitude = parseFloat($('#in-lon').value);
+  let utcOffset = parseFloat($('#in-utc').value);
+  if ($('#in-dst').checked) utcOffset += 1;
+  return { latitude, longitude, utcOffset };
+}
+
+function syncSliderReadout() {
+  const b = birthInput();
+  const max = daysInMonth(b.year, b.month);
+  sl.day.max = max;
+  if (+sl.day.value > max) { sl.day.value = max; b.day = max; }
+  $('#val-year').textContent = b.year;
+  $('#val-month').textContent = MONTH_NAMES[b.month - 1];
+  $('#val-day').textContent = b.day;
+  $('#val-time').textContent = fmtClock(+sl.time.value);
+  $('#date-readout').textContent =
+    `${MONTH_NAMES[b.month - 1]} ${b.day}, ${b.year} · ${fmtClock(+sl.time.value)}`;
+}
+
+function setSliders({ year, month, day, hour, minute }) {
+  sl.year.value = year;
+  sl.month.value = month;
+  sl.day.max = daysInMonth(year, month);
+  sl.day.value = day;
+  sl.time.value = hour * 60 + Math.round(minute / 5) * 5;
+  syncSliderReadout();
+}
+
+// Live update: the sky rotates as the sliders move.
+let quietTimer = null;
+function onSliderInput() {
+  syncSliderReadout();
+  const b = birthInput();
+  const { utcOffset } = locationInput();
+  const jd = julianDay(b.year, b.month, b.day, b.hour + b.minute / 60 - (utcOffset || 0));
+  scene.setDate(jd);                       // planets glide immediately
+  if (chart) {                             // full chart refresh, debounced
+    profileName = null;                    // manual edits mean it's your sky again
+    clearTimeout(quietTimer);
+    quietTimer = setTimeout(() => revealChart({ fly: false, quiet: true }), 250);
+  }
+}
+Object.values(sl).forEach((s) => s.addEventListener('input', onSliderInput));
+syncSliderReadout();
+
+// --- city selector ------------------------------------------------------------
 
 const citySel = $('#in-city');
 CITIES.forEach(([name], i) => {
@@ -116,10 +201,11 @@ function syncCity() {
     $('#tz-hint').textContent = 'Enter coordinates (+N / +E) and the UTC offset in effect at birth.';
   }
 }
-citySel.addEventListener('change', syncCity);
+citySel.addEventListener('change', () => { syncCity(); onSliderInput(); });
+$('#in-dst').addEventListener('change', onSliderInput);
 syncCity();
 
-// --- panels -----------------------------------------------------------------
+// --- panels & toast -------------------------------------------------------------
 
 $('#menu-toggle').addEventListener('click', () => $('#menu').classList.toggle('collapsed'));
 $('#results-toggle').addEventListener('click', () => $('#results').classList.toggle('collapsed'));
@@ -132,47 +218,130 @@ function toast(msg, ms = 3200) {
   toast._t = setTimeout(() => el.classList.add('hidden'), ms);
 }
 
-// --- chart submission ---------------------------------------------------------
+// --- reveal pipeline -------------------------------------------------------------
 
-$('#birth-form').addEventListener('submit', async (ev) => {
-  ev.preventDefault();
-  const dateVal = $('#in-date').value;
-  const timeVal = $('#in-time').value;
-  if (!dateVal || !timeVal) return;
-
-  const [y, m, d] = dateVal.split('-').map(Number);
-  const [hh, mm] = timeVal.split(':').map(Number);
-  const latitude = parseFloat($('#in-lat').value);
-  const longitude = parseFloat($('#in-lon').value);
-  let utcOffset = parseFloat($('#in-utc').value);
-  if ($('#in-dst').checked) utcOffset += 1;
-  if ([latitude, longitude, utcOffset].some(Number.isNaN)) {
-    toast('Please fill in valid location values.');
+function revealChart({ fly = true, quiet = false, name = null, timeKnown = true } = {}) {
+  const b = birthInput();
+  const loc = locationInput();
+  if ([loc.latitude, loc.longitude, loc.utcOffset].some(Number.isNaN)) {
+    if (!quiet) toast('Please fill in valid location values.');
     return;
   }
 
-  chart = computeChart({
-    year: y, month: m, day: d, hour: hh, minute: mm,
-    utcOffset, latitude, longitude,
-  });
+  chart = computeChart({ ...b, utcOffset: loc.utcOffset, latitude: loc.latitude, longitude: loc.longitude });
+  profileName = name;
 
   scene.setDate(chart.jd);
   scene.clearHighlights();
   scene.highlightConstellation(SIGNS[chart.sun.sign], HIGHLIGHT.sun);
   scene.highlightConstellation(SIGNS[chart.moon.sign], HIGHLIGHT.moon);
   scene.highlightConstellation(SIGNS[chart.ascendant.sign], HIGHLIGHT.rising);
-  scene.showChartGeometry(chart, latitude, longitude);
+  scene.showChartGeometry(chart, loc.latitude, loc.longitude);
   scene.setRetrogrades(chart.planets.filter((p) => p.retro).map((p) => p.name));
 
+  $('#results-title').textContent = name ? `${name}` : 'Your Chart';
+  const note = $('#chart-note');
+  if (name && !timeKnown) {
+    note.textContent = 'Birth time unrecorded — noon used, so Moon is approximate and Rising/houses are speculative.';
+    note.classList.remove('hidden');
+  } else {
+    note.classList.add('hidden');
+  }
+
   renderResults();
+  renderKindred();
   $('#results').classList.remove('hidden');
   $('#results').classList.remove('collapsed');
   $('#nav-buttons').classList.remove('hidden');
-  if (window.innerWidth < 900) $('#menu').classList.add('collapsed');
+  if (window.innerWidth < 900 && !quiet) $('#menu').classList.add('collapsed');
 
-  toast('Mapping your birth sky — Sun, Moon and horizon lines point to your signs ✦');
-  await scene.focusChartGeometry();
+  if (fly) {
+    toast(name
+      ? `${name}'s birth sky ✦ ${SIGNS[chart.sun.sign]} Sun · ${SIGNS[chart.ascendant.sign]} Rising`
+      : 'Mapping your birth sky — Sun, Moon and horizon lines point to your signs ✦');
+    scene.focusChartGeometry();
+  }
+}
+
+$('#birth-form').addEventListener('submit', (ev) => {
+  ev.preventDefault();
+  revealChart({ fly: true });
 });
+
+// --- famous charts ---------------------------------------------------------------
+
+const famCat = $('#famous-cat');
+FAMOUS_CATEGORIES.forEach((c) => {
+  const opt = document.createElement('option');
+  opt.value = c; opt.textContent = c;
+  famCat.appendChild(opt);
+});
+
+function loadFamous(person) {
+  setSliders(person);
+  citySel.value = CUSTOM_CITY_INDEX;
+  syncCity();
+  $('#in-lat').value = person.lat;
+  $('#in-lon').value = person.lon;
+  $('#in-utc').value = person.utc;
+  $('#in-dst').checked = false;
+  revealChart({ fly: true, name: person.name, timeKnown: person.timeKnown });
+}
+
+function renderFamousList() {
+  const cat = famCat.value;
+  const list = $('#famous-list');
+  list.innerHTML = '';
+  for (const p of famousCharts.filter((f) => f.cat === cat)) {
+    const c = p.chart;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'famous-row';
+    btn.innerHTML = `
+      <span class="f-name">${p.name}</span>
+      <span class="f-signs">
+        ☉${SIGN_GLYPHS[c.sun.sign]} ☾${SIGN_GLYPHS[c.moon.sign]} ↑${SIGN_GLYPHS[c.ascendant.sign]}
+      </span>`;
+    btn.addEventListener('click', () => loadFamous(p));
+    list.appendChild(btn);
+  }
+}
+famCat.addEventListener('change', renderFamousList);
+renderFamousList();
+
+// Kindred charts: famous people sharing signs with the displayed chart.
+function renderKindred() {
+  const box = $('#kindred');
+  if (!chart) { box.classList.add('hidden'); return; }
+  const matches = famousCharts
+    .filter((p) => p.name !== profileName)
+    .map((p) => {
+      const parts = [];
+      if (p.chart.sun.sign === chart.sun.sign) parts.push('Sun');
+      if (p.chart.moon.sign === chart.moon.sign) parts.push('Moon');
+      if (p.chart.ascendant.sign === chart.ascendant.sign) parts.push('Rising');
+      return { p, parts, score: parts.length };
+    })
+    .filter((m) => m.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6);
+
+  if (!matches.length) { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  box.innerHTML = `
+    <h3>Kindred charts</h3>
+    ${matches.map((m) => `
+      <button type="button" class="kindred-row" data-name="${m.p.name}">
+        <span class="f-name">${m.p.name}</span>
+        <span class="k-match">${m.parts.join(' + ')} match${m.score > 1 ? 'es' : ''}</span>
+      </button>`).join('')}`;
+  box.querySelectorAll('.kindred-row').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const person = famousCharts.find((p) => p.name === btn.dataset.name);
+      if (person) loadFamous(person);
+    });
+  });
+}
 
 // --- fly-to buttons -----------------------------------------------------------
 
@@ -222,7 +391,8 @@ function renderResults() {
     });
     b3.appendChild(div);
   }
-  setActiveTab('sun');
+  const active = document.querySelector('.tab.active');
+  setActiveTab(active ? active.dataset.tab : 'sun');
 }
 
 function setActiveTab(tab) {
@@ -240,7 +410,6 @@ function elementChip(signIndex) {
   return `<span class="element-chip" style="--el:${el.color}">${el.emoji} ${name}</span>`;
 }
 
-// How the three placements' elements combine, in one sentence.
 function elementBalance() {
   const roles = [
     ['Sun', chart.sun.sign], ['Moon', chart.moon.sign], ['Rising', chart.ascendant.sign],
@@ -253,11 +422,11 @@ function elementBalance() {
   const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   let blurb;
   if (entries.length === 1) {
-    blurb = `Pure ${entries[0][0]} — your Sun, Moon and Rising all share one element. ${ELEMENTS[entries[0][0]].keyword[0].toUpperCase()}${ELEMENTS[entries[0][0]].keyword.slice(1)} runs through everything you do.`;
+    blurb = `Pure ${entries[0][0]} — the Sun, Moon and Rising all share one element. ${ELEMENTS[entries[0][0]].keyword[0].toUpperCase()}${ELEMENTS[entries[0][0]].keyword.slice(1)} runs through everything.`;
   } else if (entries.length === 2) {
     blurb = `Mostly ${entries[0][0]} (${entries[0][1]} of 3) with a current of ${entries[1][0]} — ${ELEMENTS[entries[0][0]].keyword}, tempered by ${ELEMENTS[entries[1][0]].keyword}.`;
   } else {
-    blurb = 'Three placements, three elements — an unusually balanced blend that lets you meet people on almost any wavelength.';
+    blurb = 'Three placements, three elements — an unusually balanced blend, at home on almost any wavelength.';
   }
   return { roles, counts, blurb };
 }
@@ -271,8 +440,8 @@ function renderTab(tab) {
     box.innerHTML = `
       <p class="intro">${RETRO_INTRO}</p>
       <p class="retro-summary">${retroCount === 0
-        ? 'No planets were retrograde when you were born — a rare all-direct chart.'
-        : `${retroCount} planet${retroCount > 1 ? 's were' : ' was'} retrograde ℞ at your birth.`}</p>
+        ? 'No planets were retrograde at this birth — a rare all-direct chart.'
+        : `${retroCount} planet${retroCount > 1 ? 's were' : ' was'} retrograde ℞ at this birth.`}</p>
       ${chart.planets.map((p) => {
         const info = PLANET_INFO[p.name];
         return `
@@ -313,7 +482,7 @@ function renderTab(tab) {
             <span class="element-emoji">${el.emoji}</span>
             <div>
               <strong>${name}</strong>
-              <span class="element-count">${counts[name] ? `× ${counts[name]} in your big three` : ''}</span>
+              <span class="element-count">${counts[name] ? `× ${counts[name]} in the big three` : ''}</span>
               <div class="element-trine">${el.trine}</div>
             </div>
           </div>
@@ -324,7 +493,7 @@ function renderTab(tab) {
 
   if (tab === 'houses') {
     box.innerHTML = `
-      <p class="intro">Whole-sign houses: your rising sign becomes your 1st house,
+      <p class="intro">Whole-sign houses: the rising sign becomes the 1st house,
       and each following sign rules the next arena of life.</p>
       ${chart.houses.map((h) => {
         const hm = HOUSE_MEANINGS[h.house - 1];

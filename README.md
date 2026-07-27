@@ -34,9 +34,10 @@ working offline — every asset is cached by a service worker on first visit.
 
 1. **Explore** — drag to orbit, scroll to zoom. Planets, orbits, the golden
    ecliptic ring with sign glyphs, and the constellations are all live.
-2. **Enter your birth details** in the *Your Birth Sky* panel: date, time,
-   and birthplace (pick a city or enter coordinates + UTC offset; tick the
-   DST box if daylight saving was in effect when you were born).
+2. **Dial in your birth details** with the year / month / day / time sliders —
+   the planets glide to their positions live as you drag — and pick a
+   birthplace (a city, or coordinates + UTC offset; tick the DST box if
+   daylight saving was in effect when you were born).
 3. **Reveal My Chart** — the planets snap to their positions on your birth
    date, your Sun / Moon / Rising constellations light up in gold, silver,
    and rose, and the camera flies to your Sun sign.
@@ -46,6 +47,10 @@ working offline — every asset is cached by a service worker on first visit.
 5. **Fly to…** buttons jump between your Sun, Moon, and Rising
    constellations, Earth as it stood in your birth sky, and the full solar
    system overview.
+6. **Famous charts** — browse celebrities, musicians, world leaders,
+   visionaries, athletes and infamous figures; loading one shows their full
+   profile. After revealing your own chart, **Kindred charts** lists the
+   famous people who share your Sun, Moon, or Rising sign.
 
 ## How the astrology is computed
 
