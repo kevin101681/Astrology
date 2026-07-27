@@ -587,6 +587,13 @@ export class AstroScene {
     this._sightLine(group, E, moonDir, 0xc9d6ea, '☾', `Moon in ${SIGNS[chart.moon.sign]}`);
     this._sightLine(group, E, ascDir, 0xe69ac2, '↑', `Rising in ${SIGNS[chart.ascendant.sign]}`);
 
+    // Black Moon Lilith: the direction of the Moon's apogee — a point, not
+    // a body, so its line is fainter and violet.
+    if (chart.lilith) {
+      const lilDir = eclipticDir(chart.lilith.longitude);
+      this._sightLine(group, E, lilDir, 0x9b6bd4, '⚸', `Lilith in ${SIGNS[chart.lilith.sign]}`);
+    }
+
     // Observer's horizon plane: perpendicular to the local zenith. The
     // zenith points at RA = local sidereal time, Dec = latitude.
     const lst = gmst(chart.jd) + longitude; // degrees
