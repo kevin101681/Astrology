@@ -210,6 +210,54 @@ syncCity();
 $('#menu-toggle').addEventListener('click', () => $('#menu').classList.toggle('collapsed'));
 $('#results-toggle').addEventListener('click', () => $('#results').classList.toggle('collapsed'));
 
+// Fade the UI cards out for the duration of a camera flight, back in after.
+async function cinematic(flight) {
+  document.body.classList.add('ui-dimmed');
+  try {
+    await flight;
+  } finally {
+    document.body.classList.remove('ui-dimmed');
+  }
+}
+
+// Swipe down on a bottom-sheet card (mobile) to close it, with live drag.
+function enableSwipeToClose(panel) {
+  const body = panel.querySelector('.panel-body');
+  let startY = null, dy = 0, active = false;
+
+  panel.addEventListener('touchstart', (e) => {
+    if (!window.matchMedia('(max-width: 900px)').matches) return;
+    if (panel.classList.contains('collapsed')) return;
+    if (body.scrollTop > 2) return;   // only when the card is scrolled to top
+    startY = e.touches[0].clientY;
+    dy = 0;
+    active = true;
+  }, { passive: true });
+
+  panel.addEventListener('touchmove', (e) => {
+    if (!active || startY === null) return;
+    dy = e.touches[0].clientY - startY;
+    if (dy > 0) {
+      panel.classList.add('dragging');
+      panel.style.transform = `translateY(${dy}px)`;
+    }
+  }, { passive: true });
+
+  const finish = () => {
+    if (!active) return;
+    active = false;
+    panel.classList.remove('dragging');
+    panel.style.transform = '';
+    if (dy > 90) panel.classList.add('collapsed');
+    startY = null;
+    dy = 0;
+  };
+  panel.addEventListener('touchend', finish);
+  panel.addEventListener('touchcancel', finish);
+}
+enableSwipeToClose($('#menu'));
+enableSwipeToClose($('#results'));
+
 function toast(msg, ms = 3200) {
   const el = $('#toast');
   el.textContent = msg;
@@ -259,7 +307,7 @@ function revealChart({ fly = true, quiet = false, name = null, timeKnown = true 
     toast(name
       ? `${name}'s birth sky ✦ ${SIGNS[chart.sun.sign]} Sun · ${SIGNS[chart.ascendant.sign]} Rising`
       : 'Mapping your birth sky — Sun, Moon and horizon lines point to your signs ✦');
-    scene.focusChartGeometry();
+    cinematic(scene.focusChartGeometry());
   }
 }
 
@@ -348,16 +396,16 @@ function renderKindred() {
 document.querySelectorAll('.fly').forEach((btn) => {
   btn.addEventListener('click', async () => {
     const where = btn.dataset.fly;
-    if (where === 'overview') { scene.focusOverview(); return; }
+    if (where === 'overview') { cinematic(scene.focusOverview()); return; }
     if (where === 'geometry') {
       if (!chart) { toast('Reveal your chart first ✦'); return; }
       toast('Your birth sky — each line shows how a sign is assigned ✦');
-      scene.focusChartGeometry();
+      cinematic(scene.focusChartGeometry());
       return;
     }
     if (where === 'earth') {
       toast('Earth — as it stood in your birth sky ♁');
-      scene.focusEarth();
+      cinematic(scene.focusEarth());
       return;
     }
     if (!chart) { toast('Reveal your chart first ✦'); return; }
@@ -366,7 +414,7 @@ document.querySelectorAll('.fly').forEach((btn) => {
       : chart.ascendant.sign;
     setActiveTab(where);
     toast(`Flying to ${SIGNS[sign]} — your ${where} sign ${ROLE_GLYPH[where]}`);
-    await scene.focusConstellation(SIGNS[sign]);
+    await cinematic(scene.focusConstellation(SIGNS[sign]));
   });
 });
 
@@ -387,7 +435,7 @@ function renderResults() {
     div.title = `Fly to ${SIGNS[sign]}`;
     div.addEventListener('click', () => {
       setActiveTab(role);
-      scene.focusConstellation(SIGNS[sign]);
+      cinematic(scene.focusConstellation(SIGNS[sign]));
     });
     b3.appendChild(div);
   }
