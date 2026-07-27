@@ -288,7 +288,7 @@ function revealChart({ fly = true, quiet = false, name = null, timeKnown = true 
   $('#results-title').textContent = name ? `${name}` : 'Your Chart';
   const note = $('#chart-note');
   if (name && !timeKnown) {
-    note.textContent = 'Birth time unrecorded — noon used, so Moon is approximate and Rising/houses are speculative.';
+    note.textContent = 'Birth time uncertain or unrecorded — the Moon may shift a sign, and Rising/houses are speculative.';
     note.classList.remove('hidden');
   } else {
     note.classList.add('hidden');
@@ -361,18 +361,19 @@ renderFamousList();
 function renderKindred() {
   const box = $('#kindred');
   if (!chart) { box.classList.add('hidden'); return; }
+  // Matches consider Sun and Moon only — Rising is speculative for anyone
+  // whose exact birth time isn't recorded.
   const matches = famousCharts
     .filter((p) => p.name !== profileName)
     .map((p) => {
       const parts = [];
       if (p.chart.sun.sign === chart.sun.sign) parts.push('Sun');
       if (p.chart.moon.sign === chart.moon.sign) parts.push('Moon');
-      if (p.chart.ascendant.sign === chart.ascendant.sign) parts.push('Rising');
       return { p, parts, score: parts.length };
     })
     .filter((m) => m.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 6);
+    .slice(0, 8);
 
   if (!matches.length) { box.classList.add('hidden'); return; }
   box.classList.remove('hidden');
