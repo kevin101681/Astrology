@@ -280,6 +280,7 @@ function revealChart({ fly = true, quiet = false, name = null, timeKnown = true 
   profileName = name;
 
   scene.setDate(chart.jd);
+  scene.clearHouseOverlay();
   scene.clearHighlights();
   scene.highlightConstellation(SIGNS[chart.sun.sign], HIGHLIGHT.sun);
   scene.highlightConstellation(SIGNS[chart.moon.sign], HIGHLIGHT.moon);
@@ -556,11 +557,12 @@ function renderTab(tab) {
   if (tab === 'houses') {
     box.innerHTML = `
       <p class="intro">Whole-sign houses: the rising sign becomes the 1st house,
-      and each following sign rules the next arena of life.</p>
+      and each following sign rules the next arena of life. Tap a house to
+      see its wedge overlaid on your sky.</p>
       ${chart.houses.map((h) => {
         const hm = HOUSE_MEANINGS[h.house - 1];
         return `
-        <div class="house-row">
+        <div class="house-row" data-house="${h.house}" role="button" tabindex="0">
           <div class="num">${h.house}</div>
           <div>
             <div class="h-title">${hm.title}
@@ -570,6 +572,19 @@ function renderTab(tab) {
           </div>
         </div>`;
       }).join('')}`;
+    const ordinal = (n) => n + (['th', 'st', 'nd', 'rd'][(n % 100 > 3 && n % 100 < 21) ? 0 : Math.min(n % 10, 4)] || 'th');
+    box.querySelectorAll('.house-row').forEach((row) => {
+      row.addEventListener('click', () => {
+        const num = +row.dataset.house;
+        const hm = HOUSE_MEANINGS[num - 1];
+        const h = chart.houses[num - 1];
+        box.querySelectorAll('.house-row').forEach((r) => r.classList.remove('active'));
+        row.classList.add('active');
+        scene.showHouseOverlay(chart, num, `${ordinal(num)} House — ${hm.title}`);
+        toast(`${ordinal(num)} house · ${hm.title} · ${SIGNS[h.sign]}`);
+        cinematic(scene.focusHouse());
+      });
+    });
     return;
   }
 

@@ -300,7 +300,14 @@ form input:focus, form select:focus { outline: 1px solid var(--accent); }
 /* ── Houses ── */
 .house-row {
   display: grid; grid-template-columns: 34px 1fr; gap: 10px;
-  padding: 8px 0; border-bottom: 1px solid rgba(120, 160, 255, 0.1);
+  padding: 8px 6px; border-bottom: 1px solid rgba(120, 160, 255, 0.1);
+  border-left: 2px solid transparent; border-radius: 4px;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.house-row:hover { background: rgba(110, 168, 255, 0.08); }
+.house-row.active {
+  background: rgba(232, 201, 106, 0.08);
+  border-left-color: var(--gold);
 }
 .house-row .num {
   font-size: 1rem; font-weight: 700; color: var(--gold); text-align: center;

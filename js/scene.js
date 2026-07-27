@@ -508,6 +508,97 @@ export class AstroScene {
   }
 
   // ------------------------------------------------------------------------
+  // House wheel overlay: the twelve whole-sign houses drawn as translucent
+  // wedges around Earth in the ecliptic plane, one house highlighted.
+  // ------------------------------------------------------------------------
+
+  clearHouseOverlay() {
+    if (this.houseGroup) {
+      this.scene.remove(this.houseGroup);
+      this.houseGroup.traverse((o) => {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material && o.material.dispose) o.material.dispose();
+      });
+      this.houseGroup = null;
+      this.houseFocus = null;
+    }
+  }
+
+  // chart: computeChart() result; houseNum: 1-12; labelText: e.g.
+  // "5th House — Creativity & Joy".
+  showHouseOverlay(chart, houseNum, labelText) {
+    this.clearHouseOverlay();
+    const group = new THREE.Group();
+    const E = this.earthPosition();
+    group.position.copy(E);
+
+    const ELEMENT_COLORS = [0xff8a5c, 0x7fd68f, 0xffe27a, 0x6cb2ff];
+    const R_IN = 10, R_OUT = 82;
+    // Whole-sign houses: house 1 spans the entire rising sign.
+    const startLon = chart.ascendant.sign * 30;
+
+    for (let i = 0; i < 12; i++) {
+      const sign = (chart.ascendant.sign + i) % 12;
+      const lon0 = (startLon + i * 30) * DEG;
+      const isFocus = i + 1 === houseNum;
+
+      // RingGeometry lives in the XY plane; rotateX(-90°) maps it onto the
+      // ecliptic (XZ) with theta ↔ ecliptic longitude.
+      const geo = new THREE.RingGeometry(R_IN, R_OUT, 24, 1, lon0 + 0.01, 30 * DEG - 0.02);
+      geo.rotateX(-Math.PI / 2);
+      const wedge = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+        color: ELEMENT_COLORS[sign % 4],
+        transparent: true,
+        opacity: isFocus ? 0.30 : 0.05,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      }));
+      group.add(wedge);
+
+      // Cusp line at the wedge's leading edge.
+      const cuspDir = eclipticDir(startLon + i * 30);
+      const cusp = new THREE.BufferGeometry().setFromPoints([
+        cuspDir.clone().multiplyScalar(R_IN), cuspDir.clone().multiplyScalar(R_OUT),
+      ]);
+      group.add(new THREE.Line(cusp, new THREE.LineBasicMaterial({
+        color: 0x9fb6d8, transparent: true, opacity: 0.35, depthWrite: false,
+      })));
+
+      // House number at mid-wedge.
+      const midDir = eclipticDir(startLon + i * 30 + 15);
+      const num = makeTextSprite(String(i + 1), {
+        fontSize: 44, color: isFocus ? '#ffe9a8' : '#8fa3c0', bold: isFocus, scale: 0.5,
+      });
+      num.position.copy(midDir).multiplyScalar(R_OUT * 0.82);
+      num.position.y += 1.5;
+      group.add(num);
+
+      if (isFocus) {
+        const label = makeTextSprite(labelText, {
+          fontSize: 46, color: '#ffe9a8', bold: true, scale: 1.1,
+        });
+        label.position.copy(midDir).multiplyScalar(R_OUT + 34);
+        label.position.y += 12;
+        group.add(label);
+        this.houseFocus = { midLon: startLon + i * 30 + 15 };
+      }
+    }
+
+    this.scene.add(group);
+    this.houseGroup = group;
+  }
+
+  // Hover above Earth, offset behind the highlighted wedge so it faces you.
+  focusHouse() {
+    if (!this.houseFocus) return Promise.resolve();
+    const E = this.earthPosition();
+    const dir = eclipticDir(this.houseFocus.midLon);
+    const camPos = E.clone().addScaledVector(dir, -70).add(new THREE.Vector3(0, 130, 0));
+    const target = E.clone().addScaledVector(dir, 40);
+    return this.flyTo(camPos, target, 2600);
+  }
+
+  // ------------------------------------------------------------------------
   // Chart geometry: sight lines from Earth through the Sun / Moon / eastern
   // horizon out to the zodiac, plus the observer's horizon plane. This is the
   // literal "why" of a birth chart, drawn in space.
