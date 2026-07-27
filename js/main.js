@@ -156,7 +156,7 @@ function setSliders({ year, month, day, hour, minute }) {
   sl.month.value = month;
   sl.day.max = daysInMonth(year, month);
   sl.day.value = day;
-  sl.time.value = hour * 60 + Math.round(minute / 5) * 5;
+  sl.time.value = hour * 60 + minute;
   syncSliderReadout();
 }
 
