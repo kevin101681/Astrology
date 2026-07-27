@@ -1,6 +1,6 @@
 // Celestial Atlas service worker — cache-first for the fully static app,
 // so it works offline and installs as a PWA.
-const CACHE = 'celestial-atlas-v9';
+const CACHE = 'celestial-atlas-v10';
 
 const ASSETS = [
   './',
@@ -14,6 +14,7 @@ const ASSETS = [
   './js/data/constellations.js',
   './js/data/meanings.js',
   './js/data/famous.js',
+  './js/data/cities.js',
   './vendor/three.module.js',
   './vendor/OrbitControls.js',
   './icons/icon-192.png',
