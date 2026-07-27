@@ -287,6 +287,16 @@ form input:focus, form select:focus { outline: 1px solid var(--accent); }
   background: rgba(255, 120, 120, 0.12); border: 1px solid rgba(255, 130, 130, 0.4);
 }
 
+/* ── Lilith ── */
+.lilith-block {
+  margin-top: 10px; padding: 4px 10px 6px; border-radius: 10px;
+  background: rgba(140, 90, 210, 0.08);
+  border: 1px solid rgba(155, 107, 212, 0.35);
+}
+.lilith-block .planet-row { border-bottom: none; }
+.lilith-glyph { color: #b48ae0 !important; }
+.lilith-reading { margin-top: 6px; color: #cdb3ec !important; }
+
 /* ── Houses ── */
 .house-row {
   display: grid; grid-template-columns: 34px 1fr; gap: 10px;

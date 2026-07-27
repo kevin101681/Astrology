@@ -170,6 +170,28 @@ export const PLANET_INFO = {
 
 export const RETRO_INTRO = 'A planet is "retrograde" when, seen from Earth, it appears to move backward through the zodiac — an optical effect of our orbits overtaking each other. In a birth chart, retrograde planets are read as energies turned inward.';
 
+// Black Moon Lilith — the empty focus of the Moon's orbit (mean apogee).
+export const LILITH_INFO = {
+  glyph: '⚸',
+  title: 'Black Moon Lilith',
+  domain: 'shadow · instinct · the untamed',
+  intro: 'Lilith is not a body but a point: the dark, empty focus of the Moon\'s orbit, where the Moon swings farthest from Earth. In a chart it marks your wild, uncompromising side — the instinct you were taught to suppress, and the power you reclaim when you stop apologizing for it.',
+  signs: {
+    Aries: 'Lilith in Aries: raw, unapologetic will. You were told your anger was too much; your power returns the moment you let yourself want things first and fight for them openly.',
+    Taurus: 'Lilith in Taurus: untamed appetite. Shamed around pleasure, comfort or possession, you reclaim yourself by owning your senses and your worth without justification.',
+    Gemini: 'Lilith in Gemini: the forbidden voice. Somewhere your words were dismissed or twisted; your wild side returns when you say the unsayable and let curiosity go where it is not invited.',
+    Cancer: 'Lilith in Cancer: the refused nest. Care came with conditions, so you distrust need itself; power returns when you mother yourself first and let tenderness be fierce.',
+    Leo: 'Lilith in Leo: exiled radiance. You learned that shining invited punishment; you reclaim it by taking the stage without permission and letting the applause be optional.',
+    Virgo: 'Lilith in Virgo: the imperfect body. Shamed through standards no one could meet, you return to power when usefulness stops being the price of your existence.',
+    Libra: 'Lilith in Libra: the unpartnered self. Taught to keep the peace at any cost, your wildness is the "no" that ends a beautiful-looking arrangement — fairness over niceness, always.',
+    Scorpio: 'Lilith in Scorpio: forbidden depth. Desire, power and secrecy were made shameful; you reclaim them by refusing to be managed and letting intimacy be as intense as it truly is.',
+    Sagittarius: 'Lilith in Sagittarius: the heretic. Your questions embarrassed the faithful; power returns when you trust your own philosophy over every inherited map.',
+    Capricorn: 'Lilith in Capricorn: the renegade authority. You saw how rules protect the rule-makers; your wild side builds its own structure and answers to no title.',
+    Aquarius: 'Lilith in Aquarius: the exile\'s genius. Cast out for being different, you stop softening your strangeness — the group needs the signal only the outsider can send.',
+    Pisces: 'Lilith in Pisces: the unowned mystic. Your sensitivity was called weakness; you reclaim it as vision, refusing both martyrdom and numbness.',
+  },
+};
+
 export const HOUSE_MEANINGS = [
   { num: 1,  title: 'Self & Appearance',      text: 'Your identity, body, first impressions and the way you launch into life. Ruled by your rising sign — the mask that turns out to be a face.' },
   { num: 2,  title: 'Money & Values',          text: 'Income, possessions, self-worth and what you consider truly valuable. How you earn, spend and hold on.' },

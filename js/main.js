@@ -10,7 +10,7 @@ import {
 } from './astro.js';
 import {
   SIGN_MEANINGS, HOUSE_MEANINGS, PLACEMENT_INTRO,
-  ELEMENTS, elementOfSign, PLANET_INFO, RETRO_INTRO,
+  ELEMENTS, elementOfSign, PLANET_INFO, RETRO_INTRO, LILITH_INFO,
 } from './data/meanings.js';
 import { FAMOUS, FAMOUS_CATEGORIES } from './data/famous.js';
 
@@ -505,7 +505,21 @@ function renderTab(tab) {
             <div class="h-text">${p.retro ? info.retro : info.text}</div>
           </div>
         </div>`;
-      }).join('')}`;
+      }).join('')}
+      <div class="lilith-block">
+        <div class="planet-row">
+          <div class="p-glyph lilith-glyph">${LILITH_INFO.glyph}</div>
+          <div>
+            <div class="p-title">${LILITH_INFO.title}
+              <span class="h-sign" style="color:#b48ae0">
+                ${SIGN_GLYPHS[chart.lilith.sign]} ${fmtLongitude(chart.lilith.longitude)}</span>
+            </div>
+            <div class="p-domain">${LILITH_INFO.domain}</div>
+            <div class="h-text">${LILITH_INFO.intro}</div>
+            <div class="h-text lilith-reading">${LILITH_INFO.signs[SIGNS[chart.lilith.sign]]}</div>
+          </div>
+        </div>
+      </div>`;
     return;
   }
 

@@ -97,6 +97,15 @@ export function moonLongitude(jd) {
   return norm360(Lp + dL);
 }
 
+// Black Moon Lilith (mean lunar apogee): the far focus of the Moon's orbit.
+// Mean longitude of the lunar perigee (Meeus) + 180°. Cycles the zodiac
+// every ~8.85 years.
+export function lilithLongitude(jd) {
+  const T = j2000(jd) / 36525;
+  const perigee = 83.3532465 + 4069.0137287 * T - 0.0103200 * T * T;
+  return norm360(perigee + 180);
+}
+
 // Greenwich mean sidereal time, degrees.
 export function gmst(jd) {
   const n = j2000(jd);
@@ -254,5 +263,6 @@ export function computeChart({ year, month, day, hour, minute, utcOffset, latitu
     midheaven: { longitude: mcLon, sign: signOf(mcLon) },
     houses,
     planets,
+    lilith: { longitude: lilithLongitude(jd), sign: signOf(lilithLongitude(jd)) },
   };
 }
