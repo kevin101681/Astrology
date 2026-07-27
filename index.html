@@ -33,7 +33,7 @@
       <form id="birth-form">
         <div id="date-readout" class="date-readout">June 15, 1990 · 12:00 PM</div>
         <label class="slider-label">Year <span class="slider-val" id="val-year">1990</span>
-          <input type="range" id="sl-year" min="1900" max="2030" step="1" value="1990" />
+          <input type="range" id="sl-year" min="1800" max="2030" step="1" value="1990" />
         </label>
         <label class="slider-label">Month <span class="slider-val" id="val-month">June</span>
           <input type="range" id="sl-month" min="1" max="12" step="1" value="6" />
@@ -45,8 +45,10 @@
           <input type="range" id="sl-time" min="0" max="1439" step="1" value="720" />
         </label>
         <label>Birthplace
-          <select id="in-city"></select>
+          <input type="text" id="in-city-search" placeholder="Search a city — every WA city included"
+                 autocomplete="off" spellcheck="false" />
         </label>
+        <div id="city-results" class="hidden"></div>
         <div id="custom-place" class="row3 hidden">
           <label>Lat °<input type="number" id="in-lat" step="0.01" min="-89.9" max="89.9" value="40.71" /></label>
           <label>Lon °<input type="number" id="in-lon" step="0.01" min="-180" max="180" value="-74.01" /></label>

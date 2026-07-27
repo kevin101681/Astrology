@@ -13,48 +13,7 @@ import {
   ELEMENTS, elementOfSign, PLANET_INFO, RETRO_INTRO, LILITH_INFO,
 } from './data/meanings.js';
 import { FAMOUS, FAMOUS_CATEGORIES } from './data/famous.js';
-
-// [name, latitude °N, longitude °E, standard UTC offset]
-const CITIES = [
-  ['New York, USA', 40.71, -74.01, -5],
-  ['Los Angeles, USA', 34.05, -118.24, -8],
-  ['Chicago, USA', 41.88, -87.63, -6],
-  ['Denver, USA', 39.74, -104.99, -7],
-  ['Seattle, USA', 47.61, -122.33, -8],
-  ['Miami, USA', 25.76, -80.19, -5],
-  ['Honolulu, USA', 21.31, -157.86, -10],
-  ['Anchorage, USA', 61.22, -149.90, -9],
-  ['Toronto, Canada', 43.65, -79.38, -5],
-  ['Vancouver, Canada', 49.28, -123.12, -8],
-  ['Mexico City, Mexico', 19.43, -99.13, -6],
-  ['São Paulo, Brazil', -23.55, -46.63, -3],
-  ['Buenos Aires, Argentina', -34.60, -58.38, -3],
-  ['London, UK', 51.51, -0.13, 0],
-  ['Paris, France', 48.86, 2.35, 1],
-  ['Berlin, Germany', 52.52, 13.40, 1],
-  ['Madrid, Spain', 40.42, -3.70, 1],
-  ['Rome, Italy', 41.90, 12.50, 1],
-  ['Athens, Greece', 37.98, 23.73, 2],
-  ['Moscow, Russia', 55.76, 37.62, 3],
-  ['Istanbul, Türkiye', 41.01, 28.98, 3],
-  ['Dubai, UAE', 25.20, 55.27, 4],
-  ['Mumbai, India', 19.08, 72.88, 5.5],
-  ['New Delhi, India', 28.61, 77.21, 5.5],
-  ['Bangkok, Thailand', 13.76, 100.50, 7],
-  ['Singapore', 1.35, 103.82, 8],
-  ['Hong Kong', 22.32, 114.17, 8],
-  ['Beijing, China', 39.90, 116.41, 8],
-  ['Shanghai, China', 31.23, 121.47, 8],
-  ['Seoul, South Korea', 37.57, 126.98, 9],
-  ['Tokyo, Japan', 35.68, 139.69, 9],
-  ['Sydney, Australia', -33.87, 151.21, 10],
-  ['Auckland, New Zealand', -36.85, 174.76, 12],
-  ['Johannesburg, South Africa', -26.20, 28.05, 2],
-  ['Cairo, Egypt', 30.04, 31.24, 2],
-  ['Lagos, Nigeria', 6.52, 3.38, 1],
-  ['Custom location…', null, null, null],
-];
-const CUSTOM_CITY_INDEX = CITIES.length - 1;
+import { WA_CITIES, WORLD_CITIES } from './data/cities.js';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
@@ -177,33 +136,71 @@ function onSliderInput() {
 Object.values(sl).forEach((s) => s.addEventListener('input', onSliderInput));
 syncSliderReadout();
 
-// --- city selector ------------------------------------------------------------
+// --- birthplace picker: live search over all WA cities + world cities ----------
 
-const citySel = $('#in-city');
-CITIES.forEach(([name], i) => {
-  const opt = document.createElement('option');
-  opt.value = i; opt.textContent = name;
-  citySel.appendChild(opt);
-});
-citySel.value = 0;
+const cityInput = $('#in-city-search');
+const cityResults = $('#city-results');
 
-function syncCity() {
-  const [, lat, lon, utc] = CITIES[+citySel.value];
-  const custom = lat === null;
-  $('#custom-place').classList.toggle('hidden', !custom);
-  if (!custom) {
-    $('#in-lat').value = lat;
-    $('#in-lon').value = lon;
-    $('#in-utc').value = utc;
-    $('#tz-hint').textContent =
-      `Standard time UTC${utc >= 0 ? '+' : ''}${utc}. Tick the box below if DST applied at birth.`;
-  } else {
-    $('#tz-hint').textContent = 'Enter coordinates (+N / +E) and the UTC offset in effect at birth.';
-  }
+const PLACES = [
+  ...WA_CITIES.map(([n, la, lo]) => ({ name: `${n}, WA`, lat: la, lon: lo, utc: -8 })),
+  ...WORLD_CITIES.map(([n, la, lo, u]) => ({ name: n, lat: la, lon: lo, utc: u })),
+];
+
+function hideCityResults() { cityResults.classList.add('hidden'); }
+
+function applyPlace(p) {
+  $('#in-lat').value = p.lat;
+  $('#in-lon').value = p.lon;
+  $('#in-utc').value = p.utc;
+  $('#custom-place').classList.add('hidden');
+  $('#tz-hint').textContent =
+    `Standard time UTC${p.utc >= 0 ? '+' : ''}${p.utc}. Tick the box below if DST applied at birth.`;
+  cityInput.value = p.name;
+  hideCityResults();
+  onSliderInput();
 }
-citySel.addEventListener('change', () => { syncCity(); onSliderInput(); });
+
+function useCustomPlace() {
+  $('#custom-place').classList.remove('hidden');
+  $('#tz-hint').textContent = 'Enter coordinates (+N / +E) and the UTC offset in effect at birth.';
+  cityInput.value = 'Custom location';
+  hideCityResults();
+  onSliderInput();
+}
+
+function renderCityResults(query) {
+  const q = query.trim().toLowerCase();
+  let list;
+  if (!q) {
+    list = PLACES.slice(0, 8);
+  } else {
+    const starts = [], contains = [];
+    for (const p of PLACES) {
+      const n = p.name.toLowerCase();
+      if (n.startsWith(q)) starts.push(p);
+      else if (n.includes(q)) contains.push(p);
+    }
+    list = [...starts, ...contains].slice(0, 14);
+  }
+  cityResults.innerHTML = list.map((p) =>
+    `<button type="button" class="city-opt" data-i="${PLACES.indexOf(p)}">${p.name}</button>`).join('')
+    + '<button type="button" class="city-opt is-custom">✎ Custom coordinates…</button>';
+  cityResults.classList.remove('hidden');
+  // mousedown (not click) so selection wins the race against the input's blur.
+  cityResults.querySelectorAll('.city-opt').forEach((btn) => {
+    btn.addEventListener('mousedown', (ev) => {
+      ev.preventDefault();
+      if (btn.classList.contains('is-custom')) useCustomPlace();
+      else applyPlace(PLACES[+btn.dataset.i]);
+    });
+  });
+}
+
+cityInput.addEventListener('input', () => renderCityResults(cityInput.value));
+cityInput.addEventListener('focus', () => { cityInput.select(); renderCityResults(''); });
+cityInput.addEventListener('blur', () => setTimeout(hideCityResults, 150));
 $('#in-dst').addEventListener('change', onSliderInput);
-syncCity();
+applyPlace(PLACES.find((p) => p.name === 'Seattle, WA'));
 
 // --- panels & toast -------------------------------------------------------------
 
@@ -328,8 +325,10 @@ FAMOUS_CATEGORIES.forEach((c) => {
 
 function loadFamous(person) {
   setSliders(person);
-  citySel.value = CUSTOM_CITY_INDEX;
-  syncCity();
+  cityInput.value = `${person.name}'s birthplace`;
+  $('#custom-place').classList.remove('hidden');
+  $('#tz-hint').textContent =
+    `UTC${person.utc >= 0 ? '+' : ''}${person.utc} — the offset in effect at their birth.`;
   $('#in-lat').value = person.lat;
   $('#in-lon').value = person.lon;
   $('#in-utc').value = person.utc;
