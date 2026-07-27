@@ -361,29 +361,24 @@ renderFamousList();
 function renderKindred() {
   const box = $('#kindred');
   if (!chart) { box.classList.add('hidden'); return; }
-  // Matches consider Sun and Moon only — Rising is speculative for anyone
-  // whose exact birth time isn't recorded.
+  // Only true chart twins count: the same Sun sign AND the same Moon sign.
   const matches = famousCharts
-    .filter((p) => p.name !== profileName)
-    .map((p) => {
-      const parts = [];
-      if (p.chart.sun.sign === chart.sun.sign) parts.push('Sun');
-      if (p.chart.moon.sign === chart.moon.sign) parts.push('Moon');
-      return { p, parts, score: parts.length };
-    })
-    .filter((m) => m.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .filter((p) => p.name !== profileName
+      && p.chart.sun.sign === chart.sun.sign
+      && p.chart.moon.sign === chart.moon.sign)
     .slice(0, 8);
 
-  if (!matches.length) { box.classList.add('hidden'); return; }
   box.classList.remove('hidden');
+  const combo = `${SIGNS[chart.sun.sign]} Sun + ${SIGNS[chart.moon.sign]} Moon`;
   box.innerHTML = `
     <h3>Kindred charts</h3>
-    ${matches.map((m) => `
-      <button type="button" class="kindred-row" data-name="${m.p.name}">
-        <span class="f-name">${m.p.name}</span>
-        <span class="k-match">${m.parts.join(' + ')} match${m.score > 1 ? 'es' : ''}</span>
-      </button>`).join('')}`;
+    ${matches.length
+      ? matches.map((m) => `
+        <button type="button" class="kindred-row" data-name="${m.name}">
+          <span class="f-name">${m.name}</span>
+          <span class="k-match">${combo}</span>
+        </button>`).join('')
+      : `<p class="k-empty">No famous chart shares your ${combo} — a rare combination.</p>`}`;
   box.querySelectorAll('.kindred-row').forEach((btn) => {
     btn.addEventListener('click', () => {
       const person = famousCharts.find((p) => p.name === btn.dataset.name);

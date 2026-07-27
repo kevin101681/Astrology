@@ -158,6 +158,7 @@ input[type="range"]::-moz-range-thumb {
 #kindred { margin: 4px 0 12px; }
 #kindred h3 { margin-top: 4px; }
 .k-match { font-size: 0.7rem; color: var(--gold); white-space: nowrap; }
+.k-empty { font-size: 0.74rem; color: var(--text-dim); font-style: italic; }
 .chart-note {
   font-size: 0.72rem; color: #ffcf8a; background: rgba(255, 190, 90, 0.08);
   border: 1px solid rgba(255, 190, 90, 0.25); border-radius: 8px;
