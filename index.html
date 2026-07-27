@@ -32,18 +32,38 @@
       <h2>Your Birth Sky</h2>
       <form id="birth-form">
         <div id="date-readout" class="date-readout">June 15, 1990 · 12:00 PM</div>
-        <label class="slider-label">Year <span class="slider-val" id="val-year">1990</span>
+        <div class="slider-label">Year
+          <button type="button" class="slider-val" id="val-year" title="Tap to type">1990</button>
+        </div>
+        <div class="slider-row">
+          <button type="button" class="step" data-target="sl-year" data-step="-1" aria-label="Year down">−</button>
           <input type="range" id="sl-year" min="1800" max="2030" step="1" value="1990" />
-        </label>
-        <label class="slider-label">Month <span class="slider-val" id="val-month">June</span>
+          <button type="button" class="step" data-target="sl-year" data-step="1" aria-label="Year up">+</button>
+        </div>
+        <div class="slider-label">Month
+          <button type="button" class="slider-val" id="val-month" title="Tap to pick">June</button>
+        </div>
+        <div class="slider-row">
+          <button type="button" class="step" data-target="sl-month" data-step="-1" aria-label="Month down">−</button>
           <input type="range" id="sl-month" min="1" max="12" step="1" value="6" />
-        </label>
-        <label class="slider-label">Day <span class="slider-val" id="val-day">15</span>
+          <button type="button" class="step" data-target="sl-month" data-step="1" aria-label="Month up">+</button>
+        </div>
+        <div class="slider-label">Day
+          <button type="button" class="slider-val" id="val-day" title="Tap to type">15</button>
+        </div>
+        <div class="slider-row">
+          <button type="button" class="step" data-target="sl-day" data-step="-1" aria-label="Day down">−</button>
           <input type="range" id="sl-day" min="1" max="30" step="1" value="15" />
-        </label>
-        <label class="slider-label">Time born <span class="slider-val" id="val-time">12:00 PM</span>
+          <button type="button" class="step" data-target="sl-day" data-step="1" aria-label="Day up">+</button>
+        </div>
+        <div class="slider-label">Time born
+          <button type="button" class="slider-val" id="val-time" title="Tap to pick a time">12:00 PM</button>
+        </div>
+        <div class="slider-row">
+          <button type="button" class="step" data-target="sl-time" data-step="-1" aria-label="One minute earlier">−</button>
           <input type="range" id="sl-time" min="0" max="1439" step="1" value="720" />
-        </label>
+          <button type="button" class="step" data-target="sl-time" data-step="1" aria-label="One minute later">+</button>
+        </div>
         <label>Birthplace
           <input type="text" id="in-city-search" placeholder="Search a city — every WA city included"
                  autocomplete="off" spellcheck="false" />

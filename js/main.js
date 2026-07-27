@@ -102,10 +102,11 @@ function syncSliderReadout() {
   const max = daysInMonth(b.year, b.month);
   sl.day.max = max;
   if (+sl.day.value > max) { sl.day.value = max; b.day = max; }
-  $('#val-year').textContent = b.year;
-  $('#val-month').textContent = MONTH_NAMES[b.month - 1];
-  $('#val-day').textContent = b.day;
-  $('#val-time').textContent = fmtClock(+sl.time.value);
+  const set = (sel, text) => { const el = $(sel); if (el) el.textContent = text; };
+  set('#val-year', b.year);
+  set('#val-month', MONTH_NAMES[b.month - 1]);
+  set('#val-day', b.day);
+  set('#val-time', fmtClock(+sl.time.value));
   $('#date-readout').textContent =
     `${MONTH_NAMES[b.month - 1]} ${b.day}, ${b.year} · ${fmtClock(+sl.time.value)}`;
 }
@@ -135,6 +136,89 @@ function onSliderInput() {
 }
 Object.values(sl).forEach((s) => s.addEventListener('input', onSliderInput));
 syncSliderReadout();
+
+// − / + steppers: tap for one step, press-and-hold to auto-repeat.
+document.querySelectorAll('.step').forEach((btn) => {
+  const bump = () => {
+    const el = document.getElementById(btn.dataset.target);
+    const next = +el.value + +btn.dataset.step;
+    if (next < +el.min || next > +el.max) return;
+    el.value = next;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  let holdTimer = null, repeatTimer = null;
+  const start = (ev) => {
+    ev.preventDefault();
+    bump();
+    holdTimer = setTimeout(() => { repeatTimer = setInterval(bump, 100); }, 420);
+  };
+  const stop = () => { clearTimeout(holdTimer); clearInterval(repeatTimer); };
+  btn.addEventListener('pointerdown', start);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, stop));
+});
+
+// Tap a value to type it exactly.
+function inlineEdit(valBtn, buildEditor, commitValue) {
+  valBtn.addEventListener('click', () => {
+    if (valBtn.dataset.editing) return;
+    valBtn.dataset.editing = '1';
+    const editor = buildEditor();
+    editor.classList.add('val-editor');
+    valBtn.replaceWith(editor);
+    editor.focus();
+    if (editor.select) editor.select();
+    const commit = () => {
+      const v = editor.value;
+      editor.replaceWith(valBtn);       // reattach before syncing the readout
+      delete valBtn.dataset.editing;
+      commitValue(v);
+      syncSliderReadout();
+    };
+    editor.addEventListener('blur', commit);
+    editor.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === 'Escape') editor.blur();
+    });
+  });
+}
+
+const setSlider = (el, v) => {
+  el.value = Math.max(+el.min, Math.min(+el.max, Math.round(v) || +el.value));
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+};
+
+inlineEdit($('#val-year'), () => {
+  const inp = document.createElement('input');
+  inp.type = 'number'; inp.min = sl.year.min; inp.max = sl.year.max; inp.value = sl.year.value;
+  return inp;
+}, (v) => setSlider(sl.year, parseInt(v, 10)));
+
+inlineEdit($('#val-month'), () => {
+  const sel = document.createElement('select');
+  MONTH_NAMES.forEach((m, i) => {
+    const o = document.createElement('option');
+    o.value = i + 1; o.textContent = m;
+    if (i + 1 === +sl.month.value) o.selected = true;
+    sel.appendChild(o);
+  });
+  return sel;
+}, (v) => setSlider(sl.month, parseInt(v, 10)));
+
+inlineEdit($('#val-day'), () => {
+  const inp = document.createElement('input');
+  inp.type = 'number'; inp.min = 1; inp.max = sl.day.max; inp.value = sl.day.value;
+  return inp;
+}, (v) => setSlider(sl.day, parseInt(v, 10)));
+
+inlineEdit($('#val-time'), () => {
+  const inp = document.createElement('input');
+  inp.type = 'time';
+  const mins = +sl.time.value;
+  inp.value = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+  return inp;
+}, (v) => {
+  const [h, m] = String(v).split(':').map(Number);
+  if (!Number.isNaN(h) && !Number.isNaN(m)) setSlider(sl.time, h * 60 + m);
+});
 
 // --- birthplace picker: live search over all WA cities + world cities ----------
 
