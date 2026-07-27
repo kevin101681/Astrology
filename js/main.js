@@ -105,7 +105,7 @@ const famousCharts = FAMOUS.map((p) => ({
   });
   $('#now-sky').innerHTML = retro.length
     ? `<strong>Sky right now:</strong> ${retro.join(' · ')}`
-    : '<strong>Sky right now:</strong> no planets retrograde — all systems direct ✨';
+    : '<strong>Sky right now:</strong> no planets retrograde — all systems direct ✶';
 }
 
 // --- birth sliders ------------------------------------------------------------
@@ -305,8 +305,8 @@ function revealChart({ fly = true, quiet = false, name = null, timeKnown = true 
 
   if (fly) {
     toast(name
-      ? `${name}'s birth sky ✦ ${SIGNS[chart.sun.sign]} Sun · ${SIGNS[chart.ascendant.sign]} Rising`
-      : 'Mapping your birth sky — Sun, Moon and horizon lines point to your signs ✦');
+      ? `${name}'s birth sky ✶ ${SIGNS[chart.sun.sign]} Sun · ${SIGNS[chart.ascendant.sign]} Rising`
+      : 'Mapping your birth sky — Sun, Moon and horizon lines point to your signs ✶');
     cinematic(scene.focusChartGeometry());
   }
 }
@@ -398,8 +398,8 @@ document.querySelectorAll('.fly').forEach((btn) => {
     const where = btn.dataset.fly;
     if (where === 'overview') { cinematic(scene.focusOverview()); return; }
     if (where === 'geometry') {
-      if (!chart) { toast('Reveal your chart first ✦'); return; }
-      toast('Your birth sky — each line shows how a sign is assigned ✦');
+      if (!chart) { toast('Reveal your chart first ✶'); return; }
+      toast('Your birth sky — each line shows how a sign is assigned ✶');
       cinematic(scene.focusChartGeometry());
       return;
     }
@@ -408,7 +408,7 @@ document.querySelectorAll('.fly').forEach((btn) => {
       cinematic(scene.focusEarth());
       return;
     }
-    if (!chart) { toast('Reveal your chart first ✦'); return; }
+    if (!chart) { toast('Reveal your chart first ✶'); return; }
     const sign = where === 'sun' ? chart.sun.sign
       : where === 'moon' ? chart.moon.sign
       : chart.ascendant.sign;
