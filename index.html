@@ -75,7 +75,8 @@
           <label>UTC±<input type="number" id="in-utc" step="0.25" min="-12" max="14" value="-5" /></label>
         </div>
         <p class="hint" id="tz-hint"></p>
-        <label class="check"><input type="checkbox" id="in-dst" /> Daylight saving time was in effect</label>
+        <label class="check"><input type="checkbox" id="in-dst" /> Daylight saving time
+          <span id="dst-status" class="dst-status"></span></label>
         <button type="submit" id="reveal-btn">✶ Reveal My Chart</button>
       </form>
       <div id="nav-buttons" class="hidden">

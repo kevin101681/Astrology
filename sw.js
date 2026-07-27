@@ -1,6 +1,6 @@
 // Celestial Atlas service worker — cache-first for the fully static app,
 // so it works offline and installs as a PWA.
-const CACHE = 'celestial-atlas-v13';
+const CACHE = 'celestial-atlas-v14';
 
 const ASSETS = [
   './',

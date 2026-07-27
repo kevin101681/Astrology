@@ -139,48 +139,119 @@ export const WA_CITIES = [
   ['Stevenson', 45.69, -121.88], ['North Bonneville', 45.64, -121.97],
 ];
 
+// 5th element: DST rule region (see dstActive below).
 export const WORLD_CITIES = [
-  ['New York, USA', 40.71, -74.01, -5],
-  ['Los Angeles, USA', 34.05, -118.24, -8],
-  ['Chicago, USA', 41.88, -87.63, -6],
-  ['Denver, USA', 39.74, -104.99, -7],
-  ['Miami, USA', 25.76, -80.19, -5],
-  ['Honolulu, USA', 21.31, -157.86, -10],
-  ['Anchorage, USA', 61.22, -149.90, -9],
-  ['Portland, USA', 45.52, -122.68, -8],
-  ['San Francisco, USA', 37.77, -122.42, -8],
-  ['Phoenix, USA', 33.45, -112.07, -7],
-  ['Dallas, USA', 32.78, -96.80, -6],
-  ['Houston, USA', 29.76, -95.37, -6],
-  ['Atlanta, USA', 33.75, -84.39, -5],
-  ['Boston, USA', 42.36, -71.06, -5],
-  ['Washington DC, USA', 38.91, -77.04, -5],
-  ['Toronto, Canada', 43.65, -79.38, -5],
-  ['Vancouver BC, Canada', 49.28, -123.12, -8],
-  ['Mexico City, Mexico', 19.43, -99.13, -6],
-  ['São Paulo, Brazil', -23.55, -46.63, -3],
-  ['Buenos Aires, Argentina', -34.60, -58.38, -3],
-  ['London, UK', 51.51, -0.13, 0],
-  ['Paris, France', 48.86, 2.35, 1],
-  ['Berlin, Germany', 52.52, 13.40, 1],
-  ['Madrid, Spain', 40.42, -3.70, 1],
-  ['Rome, Italy', 41.90, 12.50, 1],
-  ['Athens, Greece', 37.98, 23.73, 2],
-  ['Moscow, Russia', 55.76, 37.62, 3],
-  ['Istanbul, Türkiye', 41.01, 28.98, 3],
-  ['Dubai, UAE', 25.20, 55.27, 4],
-  ['Mumbai, India', 19.08, 72.88, 5.5],
-  ['New Delhi, India', 28.61, 77.21, 5.5],
-  ['Bangkok, Thailand', 13.76, 100.50, 7],
-  ['Singapore', 1.35, 103.82, 8],
-  ['Hong Kong', 22.32, 114.17, 8],
-  ['Beijing, China', 39.90, 116.41, 8],
-  ['Shanghai, China', 31.23, 121.47, 8],
-  ['Seoul, South Korea', 37.57, 126.98, 9],
-  ['Tokyo, Japan', 35.68, 139.69, 9],
-  ['Sydney, Australia', -33.87, 151.21, 10],
-  ['Auckland, New Zealand', -36.85, 174.76, 12],
-  ['Johannesburg, South Africa', -26.20, 28.05, 2],
-  ['Cairo, Egypt', 30.04, 31.24, 2],
-  ['Lagos, Nigeria', 6.52, 3.38, 1],
+  ['New York, USA', 40.71, -74.01, -5, 'us'],
+  ['Los Angeles, USA', 34.05, -118.24, -8, 'us'],
+  ['Chicago, USA', 41.88, -87.63, -6, 'us'],
+  ['Denver, USA', 39.74, -104.99, -7, 'us'],
+  ['Miami, USA', 25.76, -80.19, -5, 'us'],
+  ['Honolulu, USA', 21.31, -157.86, -10, 'none'],
+  ['Anchorage, USA', 61.22, -149.90, -9, 'us'],
+  ['Portland, USA', 45.52, -122.68, -8, 'us'],
+  ['San Francisco, USA', 37.77, -122.42, -8, 'us'],
+  ['Phoenix, USA', 33.45, -112.07, -7, 'none'],
+  ['Dallas, USA', 32.78, -96.80, -6, 'us'],
+  ['Houston, USA', 29.76, -95.37, -6, 'us'],
+  ['Atlanta, USA', 33.75, -84.39, -5, 'us'],
+  ['Boston, USA', 42.36, -71.06, -5, 'us'],
+  ['Washington DC, USA', 38.91, -77.04, -5, 'us'],
+  ['Toronto, Canada', 43.65, -79.38, -5, 'us'],
+  ['Vancouver BC, Canada', 49.28, -123.12, -8, 'us'],
+  ['Mexico City, Mexico', 19.43, -99.13, -6, 'mx'],
+  ['São Paulo, Brazil', -23.55, -46.63, -3, 'br'],
+  ['Buenos Aires, Argentina', -34.60, -58.38, -3, 'none'],
+  ['London, UK', 51.51, -0.13, 0, 'uk'],
+  ['Paris, France', 48.86, 2.35, 1, 'eu'],
+  ['Berlin, Germany', 52.52, 13.40, 1, 'eu'],
+  ['Madrid, Spain', 40.42, -3.70, 1, 'eu'],
+  ['Rome, Italy', 41.90, 12.50, 1, 'eu'],
+  ['Athens, Greece', 37.98, 23.73, 2, 'eu'],
+  ['Moscow, Russia', 55.76, 37.62, 3, 'ru'],
+  ['Istanbul, Türkiye', 41.01, 28.98, 3, 'none'],
+  ['Dubai, UAE', 25.20, 55.27, 4, 'none'],
+  ['Mumbai, India', 19.08, 72.88, 5.5, 'none'],
+  ['New Delhi, India', 28.61, 77.21, 5.5, 'none'],
+  ['Bangkok, Thailand', 13.76, 100.50, 7, 'none'],
+  ['Singapore', 1.35, 103.82, 8, 'none'],
+  ['Hong Kong', 22.32, 114.17, 8, 'none'],
+  ['Beijing, China', 39.90, 116.41, 8, 'none'],
+  ['Shanghai, China', 31.23, 121.47, 8, 'none'],
+  ['Seoul, South Korea', 37.57, 126.98, 9, 'none'],
+  ['Tokyo, Japan', 35.68, 139.69, 9, 'none'],
+  ['Sydney, Australia', -33.87, 151.21, 10, 'au'],
+  ['Auckland, New Zealand', -36.85, 174.76, 12, 'nz'],
+  ['Johannesburg, South Africa', -26.20, 28.05, 2, 'none'],
+  ['Cairo, Egypt', 30.04, 31.24, 2, 'eg'],
+  ['Lagos, Nigeria', 6.52, 3.38, 1, 'none'],
 ];
+
+// ---------------------------------------------------------------------------
+// Historical DST detection, by rule region. Covers the documented eras well;
+// small-town local options in murky decades (e.g. US 1946–66) are
+// approximated by the prevailing urban practice. The UI lets users override.
+// ---------------------------------------------------------------------------
+
+const dayOfWeek = (y, m, d) => new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+const lastSunday = (y, m) => {
+  const daysIn = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return daysIn - dayOfWeek(y, m, daysIn);
+};
+const nthSunday = (y, m, n) => {
+  const first = (7 - dayOfWeek(y, m, 1)) % 7 + 1;
+  return first + (n - 1) * 7;
+};
+// Is (m, d) within [start, end) given as [month, day] pairs (same year)?
+const between = (m, d, s, e) => {
+  const v = m * 100 + d, sv = s[0] * 100 + s[1], ev = e[0] * 100 + e[1];
+  return sv <= ev ? (v >= sv && v < ev) : (v >= sv || v < ev);
+};
+
+export function dstActive(rule, y, m, d) {
+  switch (rule) {
+    case 'us':
+      if (y >= 2007) return between(m, d, [3, nthSunday(y, 3, 2)], [11, nthSunday(y, 11, 1)]);
+      if (y >= 1987) return between(m, d, [4, nthSunday(y, 4, 1)], [10, lastSunday(y, 10)]);
+      if (y === 1975) return between(m, d, [2, 23], [10, lastSunday(y, 10)]);
+      if (y === 1974) return between(m, d, [1, 6], [10, lastSunday(y, 10)]);
+      if (y >= 1967) return between(m, d, [4, lastSunday(y, 4)], [10, lastSunday(y, 10)]);
+      if (y > 1945 && y < 1967) // local-option era: prevailing city practice
+        return between(m, d, [4, lastSunday(y, 4)], [9, lastSunday(y, 9)]);
+      if (y === 1945) return m < 10 || (m === 9 && d < 30); // War Time ends Sep 30
+      if (y >= 1943) return true;                            // year-round War Time
+      if (y === 1942) return m > 2 || (m === 2 && d >= 9);   // starts Feb 9
+      if (y === 1918 || y === 1919) return between(m, d, [3, lastSunday(y, 3)], [10, lastSunday(y, 10)]);
+      return false;
+    case 'uk':
+      if (y >= 1968 && y <= 1971) return true;               // year-round BST
+      if (y >= 1940 && y <= 1945) return true;               // wartime BST
+      if (y >= 1916) return between(m, d, [3, lastSunday(y, 3)], [10, lastSunday(y, 10)]);
+      return false;
+    case 'eu':
+      if (y >= 1996) return between(m, d, [3, lastSunday(y, 3)], [10, lastSunday(y, 10)]);
+      if (y >= 1980) return between(m, d, [3, lastSunday(y, 3)], [9, lastSunday(y, 9)]);
+      if (y >= 1977) return between(m, d, [4, nthSunday(y, 4, 1)], [9, lastSunday(y, 9)]);
+      return false;
+    case 'au': // Sydney / NSW
+      if (y >= 1971) return between(m, d, [10, nthSunday(y, 10, 1)], [4, nthSunday(y, 4, 1)]);
+      return false;
+    case 'nz':
+      if (y >= 1975) return between(m, d, [9, lastSunday(y, 9)], [4, nthSunday(y, 4, 1)]);
+      return false;
+    case 'mx':
+      if (y >= 1996 && y <= 2022) return between(m, d, [4, nthSunday(y, 4, 1)], [10, lastSunday(y, 10)]);
+      return false;
+    case 'br':
+      if (y >= 1985 && y <= 2018) return between(m, d, [10, nthSunday(y, 10, 3)], [2, nthSunday(y, 2, 3)]);
+      return false;
+    case 'ru':
+      if (y >= 2011 && y <= 2014) return true;               // permanent +4
+      if (y >= 1981 && y <= 2010) return between(m, d, [3, lastSunday(y, 3)], [10, lastSunday(y, 10)]);
+      return false;
+    case 'eg':
+      if ((y >= 1988 && y <= 2010) || y >= 2023) return between(m, d, [5, 1], [10, 1]);
+      return false;
+    default:
+      return false;
+  }
+}

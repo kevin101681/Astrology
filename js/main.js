@@ -13,7 +13,7 @@ import {
   ELEMENTS, elementOfSign, PLANET_INFO, RETRO_INTRO, LILITH_INFO,
 } from './data/meanings.js';
 import { FAMOUS, FAMOUS_CATEGORIES } from './data/famous.js';
-import { WA_CITIES, WORLD_CITIES } from './data/cities.js';
+import { WA_CITIES, WORLD_CITIES, dstActive } from './data/cities.js';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
@@ -120,10 +120,36 @@ function setSliders({ year, month, day, hour, minute }) {
   syncSliderReadout();
 }
 
+// DST auto-detection state: the rule region of the selected place, and
+// whether the user has manually overridden the checkbox.
+let dstRule = 'us';
+let dstManual = false;
+
+function autoApplyDST() {
+  const status = $('#dst-status');
+  if (dstRule === 'manual') {
+    if (status) status.textContent = '(manual — auto-detect off for custom places)';
+    return;
+  }
+  if (dstManual) {
+    if (status) status.textContent = '(manually overridden — pick a city to re-enable auto)';
+    return;
+  }
+  const b = birthInput();
+  const active = dstActive(dstRule, b.year, b.month, b.day);
+  $('#in-dst').checked = active;
+  if (status) {
+    status.textContent = active
+      ? 'auto-detected: in effect on this date (+1h applied)'
+      : 'auto-detected: not in effect on this date';
+  }
+}
+
 // Live update: the sky rotates as the sliders move.
 let quietTimer = null;
 function onSliderInput() {
   syncSliderReadout();
+  autoApplyDST();
   const b = birthInput();
   const { utcOffset } = locationInput();
   const jd = julianDay(b.year, b.month, b.day, b.hour + b.minute / 60 - (utcOffset || 0));
@@ -226,8 +252,8 @@ const cityInput = $('#in-city-search');
 const cityResults = $('#city-results');
 
 const PLACES = [
-  ...WA_CITIES.map(([n, la, lo]) => ({ name: `${n}, WA`, lat: la, lon: lo, utc: -8 })),
-  ...WORLD_CITIES.map(([n, la, lo, u]) => ({ name: n, lat: la, lon: lo, utc: u })),
+  ...WA_CITIES.map(([n, la, lo]) => ({ name: `${n}, WA`, lat: la, lon: lo, utc: -8, rule: 'us' })),
+  ...WORLD_CITIES.map(([n, la, lo, u, rule]) => ({ name: n, lat: la, lon: lo, utc: u, rule: rule || 'none' })),
 ];
 
 function hideCityResults() { cityResults.classList.add('hidden'); }
@@ -238,8 +264,10 @@ function applyPlace(p) {
   $('#in-utc').value = p.utc;
   $('#custom-place').classList.add('hidden');
   $('#tz-hint').textContent =
-    `Standard time UTC${p.utc >= 0 ? '+' : ''}${p.utc}. Tick the box below if DST applied at birth.`;
+    `Standard time UTC${p.utc >= 0 ? '+' : ''}${p.utc} — daylight saving is detected automatically.`;
   cityInput.value = p.name;
+  dstRule = p.rule || 'none';
+  dstManual = false;
   hideCityResults();
   onSliderInput();
 }
@@ -248,6 +276,7 @@ function useCustomPlace() {
   $('#custom-place').classList.remove('hidden');
   $('#tz-hint').textContent = 'Enter coordinates (+N / +E) and the UTC offset in effect at birth.';
   cityInput.value = 'Custom location';
+  dstRule = 'manual';
   hideCityResults();
   onSliderInput();
 }
@@ -283,7 +312,7 @@ function renderCityResults(query) {
 cityInput.addEventListener('input', () => renderCityResults(cityInput.value));
 cityInput.addEventListener('focus', () => { cityInput.select(); renderCityResults(''); });
 cityInput.addEventListener('blur', () => setTimeout(hideCityResults, 150));
-$('#in-dst').addEventListener('change', onSliderInput);
+$('#in-dst').addEventListener('change', () => { dstManual = true; onSliderInput(); });
 applyPlace(PLACES.find((p) => p.name === 'Seattle, WA'));
 
 // --- panels & toast -------------------------------------------------------------
@@ -409,6 +438,8 @@ FAMOUS_CATEGORIES.forEach((c) => {
 
 function loadFamous(person) {
   setSliders(person);
+  dstRule = 'manual'; // their utc offset already includes any DST/war time
+  dstManual = false;
   cityInput.value = `${person.name}'s birthplace`;
   $('#custom-place').classList.remove('hidden');
   $('#tz-hint').textContent =
