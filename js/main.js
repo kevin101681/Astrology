@@ -5,12 +5,14 @@
 
 import { AstroScene } from './scene.js';
 import {
-  computeChart, julianDay, SIGNS, SIGN_GLYPHS, fmtLongitude,
+  computeChart, julianDay, SIGNS, SIGN_GLYPHS, fmtLongitude, signOf,
   CHART_PLANETS, isRetrograde, retrogradeUntil, jdToDate,
+  chartAspects, transitAspects, moonLongitude,
 } from './astro.js';
 import {
   SIGN_MEANINGS, HOUSE_MEANINGS, PLACEMENT_INTRO,
   ELEMENTS, elementOfSign, PLANET_INFO, RETRO_INTRO, LILITH_INFO,
+  ASPECT_INFO, BODY_ESSENCE, BODY_GLYPH, MOON_MOOD,
 } from './data/meanings.js';
 import { FAMOUS, FAMOUS_CATEGORIES } from './data/famous.js';
 import { WA_CITIES, WORLD_CITIES, dstActive } from './data/cities.js';
@@ -440,6 +442,7 @@ function loadFamous(person) {
   setSliders(person);
   dstRule = 'manual'; // their utc offset already includes any DST/war time
   dstManual = false;
+  autoApplyDST();
   cityInput.value = `${person.name}'s birthplace`;
   $('#custom-place').classList.remove('hidden');
   $('#tz-hint').textContent =
@@ -593,6 +596,87 @@ function elementBalance() {
 function renderTab(tab) {
   const box = $('#tab-content');
   if (!chart) { box.innerHTML = ''; return; }
+
+  if (tab === 'aspects') {
+    const { trines, squares, grandTrines } = chartAspects(chart);
+    const label = (x, info) => `
+      <div class="aspect-head" style="--asp:${info.color}">
+        ${BODY_GLYPH[x.a.name]} ${x.a.name}
+        <span class="asp-glyph">${info.glyph}</span>
+        ${BODY_GLYPH[x.b.name]} ${x.b.name}
+        <span class="asp-orb">orb ${x.orb.toFixed(1)}°</span>
+      </div>`;
+    const trineText = (x) => `Your ${BODY_ESSENCE[x.a.name]} and your ${BODY_ESSENCE[x.b.name]} cooperate naturally — a built-in talent that works without being asked.`;
+    const squareText = (x) => `Your ${BODY_ESSENCE[x.a.name]} and your ${BODY_ESSENCE[x.b.name]} pull in different directions — friction that, worked deliberately, becomes your engine.`;
+    box.innerHTML = `
+      <p class="intro">Aspects are the angles between planets in this chart —
+      the wiring diagram. They're drawn on the wheel around Earth in the
+      birth-sky view: gold for grand trines, green for trines, orange for squares.</p>
+      ${grandTrines.length ? grandTrines.map((gt) => `
+        <div class="grand-card">
+          <div class="grand-title">${ASPECT_INFO.grand.glyph} Grand Trine —
+            ${gt.map((b) => `${BODY_GLYPH[b.name]} ${b.name}`).join(' · ')}
+            <span class="asp-orb">${ELEMENTS[elementOfSign(signOf(gt[0].longitude))].emoji} ${elementOfSign(signOf(gt[0].longitude))}</span>
+          </div>
+          <p class="h-text">${ASPECT_INFO.grand.blurb} Here it links your
+          ${gt.map((b) => BODY_ESSENCE[b.name]).join(', ')} into one current.</p>
+        </div>`).join('') : ''}
+      <h3 style="color:${ASPECT_INFO.trine.color}">${ASPECT_INFO.trine.glyph} Trines</h3>
+      <p class="intro">${ASPECT_INFO.trine.blurb}</p>
+      ${trines.length ? trines.map((x) => `
+        <div class="aspect-row">${label(x, ASPECT_INFO.trine)}
+          <div class="h-text">${trineText(x)}</div></div>`).join('')
+        : '<p class="k-empty">No trines within orb — nothing handed to you; everything earned.</p>'}
+      <h3 style="color:${ASPECT_INFO.square.color}">${ASPECT_INFO.square.glyph} Squares</h3>
+      <p class="intro">${ASPECT_INFO.square.blurb}</p>
+      ${squares.length ? squares.map((x) => `
+        <div class="aspect-row">${label(x, ASPECT_INFO.square)}
+          <div class="h-text">${squareText(x)}</div></div>`).join('')
+        : '<p class="k-empty">No squares within orb — an unusually low-friction chart.</p>'}`;
+    return;
+  }
+
+  if (tab === 'today') {
+    const now = new Date();
+    const jdNow = julianDay(
+      now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate(),
+      now.getUTCHours() + now.getUTCMinutes() / 60,
+    );
+    const moonSign = signOf(moonLongitude(jdNow));
+    const mood = MOON_MOOD[elementOfSign(moonSign)];
+    const retro = CHART_PLANETS.filter((p) => isRetrograde(p, jdNow));
+    const hits = transitAspects(chart, jdNow).slice(0, 4);
+    const line = (h) => {
+      const tEss = BODY_ESSENCE[h.t.name], nEss = BODY_ESSENCE[h.n.name];
+      const head = `${BODY_GLYPH[h.t.name]} ${h.t.name} ${ASPECT_INFO[h.type].glyph} your natal ${BODY_GLYPH[h.n.name]} ${h.n.name}`;
+      const body = h.type === 'conjunction'
+        ? `today's ${tEss} amplifies your ${nEss} — whatever this touches gets louder.`
+        : h.type === 'trine'
+        ? `${tEss} flows straight into your ${nEss}. An open door — use it.`
+        : h.type === 'square'
+        ? `expect friction around your ${nEss}. Channel it into work instead of fighting it.`
+        : `outside demands pull against your ${nEss}; the day asks for balance, not victory.`;
+      return `<div class="aspect-row"><div class="aspect-head" style="--asp:#cfe0ff">${head}
+        <span class="asp-orb">orb ${h.orb.toFixed(1)}°</span></div>
+        <div class="h-text">${body[0].toUpperCase()}${body.slice(1)}</div></div>`;
+    };
+    box.innerHTML = `
+      <p class="intro">Not pulled from a horoscope column — computed from the
+      actual sky right now, read against this chart.</p>
+      <div class="today-head">${now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
+      <div class="aspect-row">
+        <div class="aspect-head" style="--asp:#c9d6ea">☾ Moon in ${SIGNS[moonSign]}</div>
+        <div class="h-text">The collective mood today: ${mood}.</div>
+      </div>
+      ${retro.length ? `
+      <div class="aspect-row">
+        <div class="aspect-head" style="--asp:#ff9a9a">℞ ${retro.map((p) => PLANET_INFO[p].title).join(', ')} retrograde</div>
+        <div class="h-text">Review beats launch in ${retro.length > 1 ? 'these' : 'this'} department${retro.length > 1 ? 's' : ''} — double-check before you commit.</div>
+      </div>` : ''}
+      ${hits.length ? hits.map(line).join('')
+        : '<p class="k-empty">No tight transits to this chart today — a quiet sky. Coast.</p>'}`;
+    return;
+  }
 
   if (tab === 'planets') {
     const retroCount = chart.planets.filter((p) => p.retro).length;
