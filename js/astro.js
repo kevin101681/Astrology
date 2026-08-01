@@ -228,6 +228,97 @@ export function moonPhaseAngle(jd) {
 }
 
 // ---------------------------------------------------------------------------
+// Aspects: angular relationships between chart bodies.
+// Trine = 120° (easy flow), square = 90° (productive tension).
+// A grand trine is three bodies mutually trine (a closed triangle).
+// ---------------------------------------------------------------------------
+
+const wrap180 = (x) => {
+  x = norm360(x);
+  return x > 180 ? 360 - x : x;
+};
+
+// bodies: [{ name, longitude }]
+export function findAspects(bodies) {
+  const orbFor = (a, b) =>
+    (a === 'Sun' || a === 'Moon' || b === 'Sun' || b === 'Moon') ? 7 : 6;
+  const trines = [], squares = [];
+  const trinePairs = new Set();
+  for (let i = 0; i < bodies.length; i++) {
+    for (let j = i + 1; j < bodies.length; j++) {
+      const a = bodies[i], b = bodies[j];
+      const sep = wrap180(a.longitude - b.longitude);
+      const orb = orbFor(a.name, b.name);
+      if (Math.abs(sep - 120) <= orb) {
+        trines.push({ a, b, orb: Math.abs(sep - 120) });
+        trinePairs.add(`${i}|${j}`);
+      } else if (Math.abs(sep - 90) <= orb) {
+        squares.push({ a, b, orb: Math.abs(sep - 90) });
+      }
+    }
+  }
+  // Grand trines: triples whose three pairs are all trine.
+  const grandTrines = [];
+  for (let i = 0; i < bodies.length; i++) {
+    for (let j = i + 1; j < bodies.length; j++) {
+      if (!trinePairs.has(`${i}|${j}`)) continue;
+      for (let k = j + 1; k < bodies.length; k++) {
+        if (trinePairs.has(`${j}|${k}`) && trinePairs.has(`${i}|${k}`)) {
+          grandTrines.push([bodies[i], bodies[j], bodies[k]]);
+        }
+      }
+    }
+  }
+  trines.sort((x, y) => x.orb - y.orb);
+  squares.sort((x, y) => x.orb - y.orb);
+  return { trines, squares, grandTrines };
+}
+
+const cap = (s) => s[0].toUpperCase() + s.slice(1);
+
+export function chartBodies(chart) {
+  return [
+    { name: 'Sun', longitude: chart.sun.longitude },
+    { name: 'Moon', longitude: chart.moon.longitude },
+    ...chart.planets.map((p) => ({ name: cap(p.name), longitude: p.longitude })),
+  ];
+}
+
+export function chartAspects(chart) {
+  return findAspects(chartBodies(chart));
+}
+
+// Transits: aspects today's planets make to a natal chart's key points.
+export function transitAspects(chart, jdNow) {
+  const transiting = [
+    { name: 'Sun', longitude: sunLongitude(jdNow) },
+    { name: 'Moon', longitude: moonLongitude(jdNow) },
+    ...CHART_PLANETS.map((p) => ({ name: cap(p), longitude: planetGeoLongitude(p, jdNow) })),
+  ];
+  const natal = [
+    { name: 'Sun', longitude: chart.sun.longitude },
+    { name: 'Moon', longitude: chart.moon.longitude },
+    { name: 'Rising', longitude: chart.ascendant.longitude },
+  ];
+  const TYPES = [
+    ['conjunction', 0], ['square', 90], ['trine', 120], ['opposition', 180],
+  ];
+  const hits = [];
+  for (const t of transiting) {
+    for (const n of natal) {
+      const sep = wrap180(t.longitude - n.longitude);
+      for (const [type, angle] of TYPES) {
+        const orb = t.name === 'Moon' ? 6 : 5;
+        if (Math.abs(sep - angle) <= orb) {
+          hits.push({ t, n, type, orb: Math.abs(sep - angle) });
+        }
+      }
+    }
+  }
+  return hits.sort((x, y) => x.orb - y.orb);
+}
+
+// ---------------------------------------------------------------------------
 // Full birth chart
 // ---------------------------------------------------------------------------
 

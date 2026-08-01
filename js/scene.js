@@ -5,7 +5,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { ZODIAC_CONSTELLATIONS, BRIGHT_STARS } from './data/constellations.js';
-import { planetHelioLongitude, planetNames, moonPhaseAngle, gmst, SIGNS } from './astro.js';
+import { planetHelioLongitude, planetNames, moonPhaseAngle, gmst, SIGNS, chartAspects } from './astro.js';
 import {
   rockyTexture, gasGiantTexture, earthTexture, cloudTexture, sunTexture,
   glowSprite, starSprite, saturnRingTexture, milkyWayTexture,
@@ -683,6 +683,36 @@ export class AstroScene {
     if (chart.lilith) {
       const lilDir = eclipticDir(chart.lilith.longitude);
       this._sightLine(group, E, lilDir, 0x9b6bd4, '⚸', `Lilith in ${SIGNS[chart.lilith.sign]}`);
+    }
+
+    // Natal aspect web: trine/square chords drawn between the bodies'
+    // zodiac directions on a small wheel around Earth — the classic chart
+    // pattern, floating in space. Grand trines glow gold-green.
+    {
+      const { trines, squares, grandTrines } = chartAspects(chart);
+      const AR = 54;
+      const at = (lon) => E.clone().addScaledVector(eclipticDir(lon), AR);
+      const chord = (lonA, lonB, color, opacity) => {
+        const geo = new THREE.BufferGeometry().setFromPoints([at(lonA), at(lonB)]);
+        group.add(new THREE.Line(geo, new THREE.LineBasicMaterial({
+          color, transparent: true, opacity,
+          blending: THREE.AdditiveBlending, depthWrite: false,
+        })));
+      };
+      const inGrand = new Set();
+      for (const gt of grandTrines) {
+        for (let i = 0; i < 3; i++) {
+          const a = gt[i], b = gt[(i + 1) % 3];
+          chord(a.longitude, b.longitude, 0xffe27a, 0.95);
+          inGrand.add([a.name, b.name].sort().join('|'));
+        }
+      }
+      for (const { a, b } of trines) {
+        if (!inGrand.has([a.name, b.name].sort().join('|'))) {
+          chord(a.longitude, b.longitude, 0x7fd68f, 0.5);
+        }
+      }
+      for (const { a, b } of squares) chord(a.longitude, b.longitude, 0xff8a5c, 0.5);
     }
 
     // Observer's horizon plane: perpendicular to the local zenith. The

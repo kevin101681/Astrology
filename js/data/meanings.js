@@ -192,6 +192,45 @@ export const LILITH_INFO = {
   },
 };
 
+// Aspects between chart bodies.
+export const ASPECT_INFO = {
+  trine: {
+    glyph: '△', name: 'Trine', color: '#7fd68f',
+    blurb: '120° apart — an easy, flowing connection. These parts of you cooperate without effort; the risk is taking the gift for granted.',
+  },
+  square: {
+    glyph: '□', name: 'Square', color: '#ff8a5c',
+    blurb: '90° apart — productive friction. These parts of you pull in different directions, and that tension is exactly what builds mastery.',
+  },
+  grand: {
+    glyph: '▲', name: 'Grand Trine', color: '#ffe27a',
+    blurb: 'Three planets locked in a closed triangle of trines — a rare, self-sustaining circuit of talent, usually flowing through a single element.',
+  },
+  conjunction: { glyph: '☌', name: 'Conjunction' },
+  opposition: { glyph: '☍', name: 'Opposition' },
+};
+
+// One-phrase essence of each body, used to compose aspect sentences.
+export const BODY_ESSENCE = {
+  Sun: 'core identity', Moon: 'emotional world', Mercury: 'mind and voice',
+  Venus: 'way of loving', Mars: 'drive', Jupiter: 'sense of possibility',
+  Saturn: 'discipline', Uranus: 'individuality', Neptune: 'imagination',
+  Rising: 'outward self',
+};
+
+export const BODY_GLYPH = {
+  Sun: '☉', Moon: '☾', Mercury: '☿', Venus: '♀', Mars: '♂',
+  Jupiter: '♃', Saturn: '♄', Uranus: '♅', Neptune: '♆', Rising: '↑',
+};
+
+// Collective mood of the day by the transiting Moon's element.
+export const MOON_MOOD = {
+  Fire: 'bold, impatient, ready to start things',
+  Earth: 'grounded, practical, hungry for tangible progress',
+  Air: 'social, talkative, full of ideas',
+  Water: 'sensitive, intuitive, running on feel',
+};
+
 export const HOUSE_MEANINGS = [
   { num: 1,  title: 'Self & Appearance',      text: 'Your identity, body, first impressions and the way you launch into life. Ruled by your rising sign — the mask that turns out to be a face.' },
   { num: 2,  title: 'Money & Values',          text: 'Income, possessions, self-worth and what you consider truly valuable. How you earn, spend and hold on.' },
